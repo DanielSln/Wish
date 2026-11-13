@@ -16,3 +16,5 @@ Verificações executadas em 12/11/2026:
 Limites: nenhum aparelho Android/iOS físico foi controlado; o teste no Android do usuário está pendente. Não foi simulado modo avião num dispositivo. Imagens externas e loja dependem de rede. A primeira carga no Expo Go precisa do servidor. Uso autônomo offline requer um binário instalado. SQLite web é experimental e os dados dependem do perfil/origem do navegador.
 
 Segurança: oito ocorrências moderadas originais e duas adicionais na ferramenta de túnel. Veja SECURITY-AUDIT.md. Não foi executado audit fix --force.
+
+Na retomada foram aplicados expo 58.0.25 e expo-sqlite 58.0.17, ambos patches do SDK 58; testes, TypeScript, lint, install --check e Expo Doctor passaram novamente. As exportações web e Android foram repetidas após esses patches.

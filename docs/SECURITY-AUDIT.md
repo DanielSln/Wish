@@ -29,3 +29,5 @@ Fontes:
 - https://github.com/advisories/GHSA-w5hq-g745-h8pq
 
 Nenhuma credencial ou conteúdo de banco local é versionado.
+
+Na retomada, foram aplicados os patches compatíveis expo 58.0.25 e expo-sqlite 58.0.17 recomendados por expo install --check. A instalação continuou reportando 10 ocorrências moderadas (oito originais e duas do túnel); os patches não corrigiram essas cadeias. Não houve troca de SDK nem uso de --force.
