@@ -66,4 +66,3 @@ export function ProductForm({ id, initial }: { id?: string; initial?: Partial<Pr
     <Button title={busy ? 'Salvando…' : 'Salvar desejo'} disabled={busy} onPress={save} />
   </ScrollView></KeyboardAvoidingView>;
 }
-
