@@ -43,6 +43,20 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 
 Banco wish.db, versão 1: produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
+## Fase 3 — Importação por link
+
+Na lista, toque em **Importar por link**, cole o endereço HTTPS de um produto e selecione **Buscar informações**. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário permite corrigir nome, descrição, imagem, preço e loja, escolher categoria/prioridade e adicionar anotações. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
+
+O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer) e Open Graph disponibilizados no HTML. Não executa scripts da loja nem utiliza proxy, login, contorno de CAPTCHA/bloqueios ou serviços pagos. Imagens relativas são resolvidas em relação à página. Preços precisam de moeda BRL explícita e valor válido; moeda estrangeira, ofertas múltiplas e preços agregados ficam sem valor para revisão manual. Páginas com vários produtos são recusadas para evitar selecionar um produto arbitrariamente.
+
+Consultas têm cancelamento e limite de tempo de 12 segundos. O transporte expo/fetch bloqueia redirecionamentos e limita a leitura em streaming a 2 milhões de bytes, mesmo sem Content-Length. HTTP de erro, conteúdo não HTML, stream indisponível e ausência de metadados têm mensagem e alternativa manual. Não há consulta periódica de preço ou garantia de suporte a uma loja específica. Páginas dinâmicas e bloqueios CORS no navegador podem impedir a importação; nesse caso, **Preencher manualmente** preserva o link HTTPS válido. Cadastros sem rede continuam disponíveis pelo botão **Novo desejo**.
+
+Consultas automáticas são restritas aos hosts exatos de Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia definidos em src/services/import-policy.ts; imagens extraídas usam apenas CDNs explícitos. Links encurtados, redirects e outras lojas usam cadastro manual. A restrição reduz acesso a destinos arbitrários, mas não equivale a isolamento completo de DNS/IP. Veja [docs/PHASE-3-INTEGRATION.md](docs/PHASE-3-INTEGRATION.md) para os controles, riscos residuais e validação atual, e [docs/PHASE-2-INTEGRATION.md](docs/PHASE-2-INTEGRATION.md) para a revisão da base.
+
+Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. A Fase 2 do [PR #1](https://github.com/DanielSln/Wish/pull/1) foi integrada à main no commit 0c36cbaff599ba4f5c826877f011f4ab54321133, mediante autorização do proprietário. Esta branch foi sincronizada com essa main preservando os commits. O [PR #2](https://github.com/DanielSln/Wish/pull/2) agora tem base main e permanece aberto, aguardando autorização própria para integração.
+
+Revisão das fases e pendências: [docs/PHASE-2-3-REVIEW.md](docs/PHASE-2-3-REVIEW.md). Auditoria atual por dependência: [docs/SECURITY-REVIEW-2026-11-15.md](docs/SECURITY-REVIEW-2026-11-15.md). Plano técnico da Fase 4, ainda não implementada: [docs/PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md).
+
 ## Verificação
 
 ```powershell
