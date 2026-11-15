@@ -15,7 +15,7 @@ npm ci
 npx expo start --go
 ```
 
-Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npx expo start --go --tunnel` (sem argumento `ngrok` adicional).
+Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npx expo start --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
 Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 

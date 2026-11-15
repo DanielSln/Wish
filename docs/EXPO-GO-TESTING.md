@@ -108,7 +108,7 @@ Alternativa gratuita de rede:
 npx expo start --go --tunnel
 ```
 
-`@expo/ngrok` já consta no lockfile. O argumento é `--tunnel`, sem acrescentar a palavra `ngrok`. O túnel temporário pode sofrer fila, bloqueio da rede ou indisponibilidade. Não foi validado um túnel acessível por celular nesta entrega e não é necessário contratar serviço pago. Se falhar, retorne à LAN ou tente outra rede confiável.
+`@expo/ngrok` já consta no lockfile. O comando acima usa o túnel padrão da CLI, que nesta versão exige autenticação Expo. A opção legada `npx expo start --go --tunnel ngrok` também é válida; neste ambiente ela terminou com timeout. Essa autenticação da ferramenta não adiciona login ao Wish. O túnel temporário pode sofrer fila, bloqueio da rede ou indisponibilidade. Não foi validado um túnel acessível por celular nesta entrega e não é necessário contratar serviço pago. Se falhar, retorne à LAN ou tente outra rede confiável.
 
 ## Roteiro de uso e persistência
 
