@@ -27,3 +27,7 @@ Compatibilidade foi conferida na documentação SDK 58 e no manifesto local. A A
 O ambiente apresentou fallback não bloqueante de React Native DevTools por diretório de cache não gravável, e o Metro refez um cache antigo. O servidor continuou e entregou manifesto/bundle. Esses avisos não são evidência de erro no Windows nem de execução física.
 
 Antes de aprovar uso em aparelho: seguir [EXPO-GO-TESTING.md](EXPO-GO-TESTING.md), abrir QR no Expo Go 58, verificar teclado/voltar/rolagem, reinício do processo com catálogo preservado, temas Android, imagens e consultas reais às lojas (que podem bloquear), e operações locais em modo avião com o app previamente carregado. Expo Go não garante iniciar novamente sem Metro/bundle acessível; não equivale a um APK independente.
+
+## Retorno do proprietário e refinamento posterior
+
+O proprietário confirmou abertura do Wish em Android real pelo link experimental. Esse é um relato de teste físico do proprietário, distinto dos testes executados neste ambiente. O refinamento posterior no mesmo PR #6 (marca Wish, indicadores e preços) está documentado em [PROMOTIONAL-PRICES.md](PROMOTIONAL-PRICES.md), com 28 testes automatizados e três suítes de navegador; ainda precisa ser reconferido no aparelho.

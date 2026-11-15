@@ -87,3 +87,7 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
+
+### Preços promocionais e cupons
+
+A prévia distingue preço anterior, promoção explícita e opção condicionada ao PIX quando identificáveis. Cupons não são calculados nem aplicados automaticamente: o valor anunciado e as condições são apresentados para revisão. O preço pode ser corrigido manualmente e as referências ficam nas anotações, sem mudança do SQLite. Consulte [formatos suportados, caso KaBuM e validação](docs/PROMOTIONAL-PRICES.md).
