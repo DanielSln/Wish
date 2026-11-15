@@ -1,3 +1,4 @@
+import { useCatalogRevision } from '@/data/use-catalog-revision';
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -9,17 +10,18 @@ import { ProductImage } from './product-image';
 import { Brand, Icon, Mark } from './brand';
 const sorts: [NonNullable<Filters['sort']>, string][] = [['newest','Mais recentes'],['oldest','Mais antigos'],['price-asc','Menor preço'],['price-desc','Maior preço'],['priority','Prioridade']];
 export function Wishlist({ purchased = false, category }: { purchased?: boolean; category?: string }) {
+  const catalogRevision=useCatalogRevision();
   const repo = useProducts(); const { colors:c, styles:s } = useUI();
   const [products,setProducts] = useState<Product[]>([]); const [categories,setCategories] = useState<Category[]>([]);
   const [filters,setFilters] = useState<Filters>({category,sort:'newest'});
   const [loading,setLoading] = useState(true); const [error,setError] = useState(''); const [reload,setReload] = useState(0);
   const [showFilters,setShowFilters] = useState(false);
   useFocusEffect(useCallback(() => {
-    void reload; let alive=true; setLoading(true);setError('');
+    void catalogRevision; void reload; let alive=true; setLoading(true);setError('');
     const query = purchased ? {...filters,status:'purchased'} : filters;
     Promise.all([repo.list(query),repo.categories()]).then(([items,cats])=>{if(alive){setProducts(items);setCategories(cats)}}).catch(()=>{if(alive)setError('Não foi possível carregar seus desejos.')}).finally(()=>{if(alive)setLoading(false)});
     return ()=>{alive=false};
-  },[repo,filters,purchased,reload]));
+  },[repo,filters,purchased,reload,catalogRevision]));
   return <TabSurface><FlatList data={loading||error?[]:products} contentContainerStyle={s.content} keyExtractor={item=>item.id} ListHeaderComponent={<View style={{gap:24}}>
     <View style={[s.row,{justifyContent:'space-between'}]}><Brand /><Text style={{color:c.muted,fontSize:11,letterSpacing:1.4}}>UM DESEJO DE CADA VEZ</Text></View>
     <View style={{gap:8,paddingTop:14}}><Text style={{color:c.primary,fontSize:12,fontWeight:'700',letterSpacing:1.8}}>{purchased?'SUAS CONQUISTAS':'O QUE VEM A SEGUIR'}</Text><Text style={[s.title,{fontSize:36,lineHeight:42}]}>{purchased?'Valeu a espera.':'Espaço para\nseus próximos planos.'}</Text><Text style={s.body}>{purchased?'Tudo o que saiu da lista e entrou na sua vida.':'Guarde o que faz sentido. Compre no seu tempo.'}</Text></View>
