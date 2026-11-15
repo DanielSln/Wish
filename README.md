@@ -88,3 +88,7 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
+
+## Backup opcional — Fase 4
+
+O Wish continua funcionando sem conta com SQLite. A integração preparada usa e-mail OTP e exige confirmação antes de associar o catálogo. Sem projeto configurado, nenhum backup remoto é anunciado como operacional. Consulte [configuração, arquitetura e roteiro de testes](docs/SUPABASE-SETUP.md). Não coloque service role ou segredos no aplicativo.

@@ -1,6 +1,6 @@
 # Fase 4 — plano técnico de backup e sincronização
 
-Status: proposta para revisão; nenhuma integração Supabase, dependência, credencial ou migração desta fase foi implementada. Base examinada: Fase 2 em 2b7f495 e Fase 3 em c21b035/1dd5961, com correções de revisão posteriores.
+Status: plano histórico. A implementação preparada da Fase 4 e suas decisões finais (OTP, protocolo RPC, SQLite v3 e isolamento por catálogo) estão em [SUPABASE-SETUP.md](SUPABASE-SETUP.md). Ainda não há projeto Supabase configurado ou validação remota real. As propostas abaixo registram o planejamento original e não substituem o guia atual.
 
 ## Objetivo e pré-requisitos
 
