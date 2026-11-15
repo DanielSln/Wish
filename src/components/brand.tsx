@@ -29,5 +29,5 @@ export function Mark({ size = 44 }: { size?: number }) {
 }
 export function Brand() {
   const { colors } = useUI();
-  return <View style={{ flexDirection:'row',alignItems:'center',gap:11 }}><Mark size={36} /><Text style={{ color:colors.text,fontSize:26,fontWeight:'700',letterSpacing:-1 }}>wish</Text></View>;
+  return <View style={{ flexDirection:'row',alignItems:'center',gap:11 }}><Mark size={36} /><Text style={{ color:colors.text,fontSize:26,fontWeight:'700',letterSpacing:-1 }}>Wish</Text></View>;
 }

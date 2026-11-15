@@ -56,7 +56,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
   }
   if (loading) return <View style={styles.page}><ActivityIndicator color={colors.accent} /></View>;
   if (loadError) return <View style={styles.page}><Text style={styles.error}>{loadError}</Text><Button title="Tentar novamente" onPress={() => setRetry(r => r + 1)} /></View>;
-  return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+  return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Text style={styles.heading}>{id ? 'Seu desejo, do seu jeito' : 'O que você quer conquistar?'}</Text>
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {!!input.image_url && <ProductImage uri={input.image_url} large />}
@@ -66,7 +66,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     <View><Text style={styles.label}>Categoria</Text><View style={styles.row}>{categories.map(c => <Chip key={c.id} title={c.name} active={input.category_id === c.id} onPress={() => !busy && setInput(v => ({ ...v, category_id: c.id }))} />)}</View>{!!errors.category_id && <Text style={styles.error}>{errors.category_id}</Text>}</View>
     <View><Text style={styles.label}>Preço conhecido (R$)</Text><TextInput accessibilityLabel="Preço conhecido" editable={!busy} style={styles.input} keyboardType="decimal-pad" value={price} onChangeText={setPrice} placeholder="1299,90" placeholderTextColor={colors.muted} />{!!errors.price_cents && <Text style={styles.error}>{errors.price_cents}</Text>}</View>
     <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(p => <Chip key={p} title={priorityLabels[p]} active={input.priority === p} onPress={() => !busy && setInput(v => ({ ...v, priority: p }))} />)}</View></View>
-    <Text style={[styles.body,{fontSize:12}]}>Preço opcional, sem atualização automática. Confira o valor atual na loja.</Text>
+    <Text style={[styles.body,{fontSize:12}]}>Preço opcional, sem atualização automática. Confira o valor na loja; se usar cupom, informe o preço confirmado por você.</Text>
     <Button title={details ? 'Menos detalhes' : 'Mais detalhes e categorias'} variant="secondary" onPress={() => setDetails(v => !v)} />
     {details && <View style={{ gap: 22 }}>
     <View><Text style={styles.label}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60} /><Button title="Criar categoria" disabled={busy || !newCategory.trim()} onPress={addCategory} style={{ marginTop: 10 }} /></View>

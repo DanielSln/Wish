@@ -1,9 +1,9 @@
-import { parsePrice } from '../domain/product.ts';
+import { extractPrices, type PriceEvidence } from './import-prices.ts';
 import type { ProductInput } from '../domain/product.ts';
 import { importHosts, importImageHosts } from './import-policy.ts';
 
-export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url'>;
-export type ImportPreview = { product: ImportedProduct; warnings: string[] };
+export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url' | 'notes'>;
+export type ImportPreview = { product: ImportedProduct; warnings: string[]; prices: PriceEvidence };
 const MAX_HTML = 2_000_000;
 
 // Only public HTTPS links; no credentials, local hosts or nonstandard ports.
@@ -61,33 +61,6 @@ function imageUrl(value: unknown, base: string): string {
     return importImageHosts.has(new URL(url).hostname) ? url : '';
   } catch { return ''; }
 }
-function price(value: unknown, currency: unknown): number | null {
-  // Never infer currency, use an aggregate lowPrice or convert foreign prices.
-  if (currency !== 'BRL' || !['string', 'number'].includes(typeof value)) return null;
-  try { return parsePrice(String(value)); } catch { return null; }
-}
-
-// Dates declared by the page only disqualify a price; they never prove it is current.
-function offerDate(value: unknown, endOfDay: boolean): number | null {
-  if (typeof value !== 'string') return null;
-  const day = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  if (!day && !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
-  const date = Date.parse(day ? value + (endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z') : value);
-  if (!Number.isFinite(date) || (day && new Date(date).toISOString().slice(0, 10) !== value)) return null;
-  return date;
-}
-function offerIsTimely(offer: Record<string, unknown>, now: number): boolean {
-  for (const field of ['priceValidUntil', 'validThrough']) {
-    if (!(field in offer)) continue;
-    const end = offerDate(offer[field], true);
-    if (end === null || end < now) return false;
-  }
-  if ('validFrom' in offer) {
-    const start = offerDate(offer.validFrom, false);
-    if (start === null || start > now) return false;
-  }
-  return true;
-}
 export function extractProduct(html: string, sourceUrl: string, now = Date.now()): ImportPreview {
   const source = importUrl(sourceUrl);
   if (html.length > MAX_HTML) throw new Error('A página é muito grande para importar. Cadastre o produto manualmente.');
@@ -100,6 +73,7 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
     if (key && !(key in meta)) meta[key] = attrs.content ?? '';
   }
   const products: Record<string, unknown>[] = [];
+  let nextData: unknown = null;
   function visit(value: unknown, depth = 0) {
     if (depth > 12) return;
     if (Array.isArray(value)) { value.forEach(v => visit(v, depth + 1)); return; }
@@ -109,29 +83,29 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
     if (item.mainEntity) visit(item.mainEntity, depth + 1);
   }
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
-    if (attributes(match[1]).type?.toLowerCase() !== 'application/ld+json') continue;
+    const attrs = attributes(match[1]);
+    if (attrs.id === '__NEXT_DATA__' && attrs.type?.toLowerCase() === 'application/json') { try { nextData = JSON.parse(match[2]); } catch { /* Optional public store metadata. */ } }
+    if (attrs.type?.toLowerCase() !== 'application/ld+json') continue;
     try { visit(JSON.parse(match[2])); } catch { /* Malformed metadata is optional. */ }
   }
   if (products.length > 1) throw new Error('A página contém vários produtos. Abra o link de um único produto ou cadastre manualmente.');
   const item = products[0] ?? {};
   const name = text(item.name, 160) || text(meta['og:title'], 160);
   if (!name) throw new Error('A loja não disponibilizou dados do produto. Você pode cadastrá-lo manualmente.');
-  const offers = Array.isArray(item.offers) ? item.offers : item.offers ? [item.offers] : [];
-  const offer = offers.length === 1 ? record(offers[0]) : {};
-  const isAggregate = hasSchemaType(offer['@type'], 'AggregateOffer');
-  const untimely = offers.length === 1 && !offerIsTimely(offer, now);
-  const knownPrice = offers.length ? (isAggregate || untimely ? null : price(offer.price, offer.priceCurrency)) : price(meta['product:price:amount'], meta['product:price:currency']);
+  const prices = extractPrices(item, meta, source, now, nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
+  const knownPrice = prices.current_cents;
   const product: ImportedProduct = {
     name,
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
     image_url: imageUrl(item.image, source) || imageUrl(meta['og:image'], source),
     price_cents: knownPrice,
+    notes: prices.notes,
     store: text(meta['og:site_name'], 160) || new URL(source).hostname.slice(0, 160),
     original_url: source,
   };
-  return { product, warnings: [
+  return { product, prices, warnings: [
     'Confira os dados na loja antes de salvar. O preço pode variar por vendedor, variante, frete ou promoção.',
-    ...(untimely ? ['A validade do preço está vencida, futura ou não pôde ser confirmada; nenhum valor foi preenchido.'] : []),
+    ...prices.warnings,
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
     ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
   ] };

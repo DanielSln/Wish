@@ -50,7 +50,7 @@ export default function ImportScreen() {
     setInitial({ original_url });
   }
   if (initial) return <ProductForm initial={initial} />;
-  return <ScrollView style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+  return <ScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Text style={styles.heading}>Um link, um novo desejo</Text>
     <Text style={styles.body}>Cole o link HTTPS de um produto. A consulta acessa a loja pela sua conexão e usa apenas os metadados que ela disponibilizar. A prévia é consultada automaticamente após você colar um link compatível. Nada é salvo até você revisar e confirmar.</Text>
     <Text style={styles.body}>Consulta automática habilitada para endereços diretos da Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia. Para outras lojas ou links encurtados, use o cadastro manual.</Text>
@@ -63,7 +63,10 @@ export default function ImportScreen() {
       <ProductImage uri={preview.product.image_url} large />
       <Text style={styles.heading}>{preview.product.name}</Text>
       <Text style={styles.body}>{preview.product.store}</Text>
-      <Text style={styles.body}>Preço informado pela página: {money(preview.product.price_cents)}</Text>
+      {preview.prices.original_cents !== null && <Text accessibilityLabel={`Preço anterior informado: ${money(preview.prices.original_cents)}`} style={[styles.body, preview.product.price_cents !== null && {textDecorationLine:'line-through'}]}>Preço anterior informado: {money(preview.prices.original_cents)}</Text>}
+      <Text style={styles.heading}>Preço informado pela página: {money(preview.product.price_cents)}</Text>
+      {preview.prices.conditional && <View style={{gap:12}}><Text style={styles.body}>{preview.prices.conditional.label}: {money(preview.prices.conditional.price_cents)}. Depende dessa forma de pagamento.</Text><Button variant="secondary" title="Revisar usando o preço PIX" onPress={() => { const option = preview.prices.conditional!; setInitial({...preview.product,price_cents:option.price_cents,notes:preview.product.notes+'\nPreço escolhido na revisão: '+money(option.price_cents)+' — '+option.label+'. Confira as condições na loja.'}); }}/></View>}
+      {preview.prices.coupon && <View style={{gap:8}}><Text style={styles.label}>Cupom anunciado: {preview.prices.coupon.code}</Text>{preview.prices.coupon.percent !== null && <Text style={styles.body}>{preview.prices.coupon.percent}% de desconto anunciado.</Text>}{preview.prices.coupon.amount_cents !== null && <Text style={styles.body}>{money(preview.prices.coupon.amount_cents)} de desconto anunciado.</Text>}{preview.prices.coupon.price_cents !== null && <Text style={styles.body}>Preço anunciado com cupom: {money(preview.prices.coupon.price_cents)} — sujeito às condições.</Text>}<Text style={styles.body}>{preview.prices.coupon.conditions}</Text><Text style={styles.body}>Nenhum cupom foi aplicado. Na revisão, você pode informar manualmente o preço com cupom confirmado por você.</Text></View>}
       {!!preview.product.description && <Text style={styles.body}>{preview.product.description}</Text>}
       <Text selectable style={styles.body}>{preview.product.original_url}</Text>
       {preview.warnings.map(warning => <Text key={warning} style={styles.body}>{warning}</Text>)}
