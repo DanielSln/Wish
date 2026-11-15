@@ -10,9 +10,9 @@ Antes de implementar: revisar o PR #1, depois o PR #2; testar Android físico, p
 
 ## Esquema existente e migração local
 
-O banco wish.db usa PRAGMA user_version=1. categories e products têm UUID textual, created_at/updated_at UTC e deleted_at. products referencia category_id; preços são inteiros em centavos ou NULL. As três categorias iniciais têm UUIDs fixos compartilhados por todas as instalações. A exclusão de produto já deixa tombstone. Ainda não existem proprietário, fila, versão remota, cursor ou resolução de conflitos; updated_at local sozinho não prova que um registro foi sincronizado.
+O banco wish.db usa PRAGMA user_version=2. A migração v2 acrescenta apenas app_settings para a aparência, preservando o catálogo. categories e products têm UUID textual, created_at/updated_at UTC e deleted_at. products referencia category_id; preços são inteiros em centavos ou NULL. As três categorias iniciais têm UUIDs fixos compartilhados por todas as instalações. A exclusão de produto já deixa tombstone. Ainda não existem proprietário, fila, versão remota, cursor ou resolução de conflitos; updated_at local sozinho não prova que um registro foi sincronizado.
 
-Planejar migração incremental v1→v2, transacional, preservando todas as linhas e IDs, inclusive tombstones. Não editar retrospectivamente o SQL v1. A nova versão do esquema só será gravada após sucesso. Banco de versão futura continua recusado sem exclusão.
+Planejar migração incremental v2→v3, transacional, preservando todas as linhas e IDs, inclusive tombstones. Não editar retrospectivamente o SQL v1/v2. A nova versão do esquema só será gravada após sucesso. Banco de versão futura continua recusado sem exclusão.
 
 Tabelas auxiliares propostas (sem SQL executável nesta entrega):
 
@@ -84,7 +84,7 @@ EXPO_PUBLIC_SUPABASE_URL e publishable key (ou anon key legada) são configuraç
 
 ## Sequência futura e critérios de aceite
 
-1. Migração local/fila e testes de preservação v1→v2, rollback, crash e atomicidade, ainda sem rede.
+1. Migração local/fila e testes de preservação v2→v3, rollback, crash e atomicidade, ainda sem rede.
 2. Esquema remoto, constraints, RLS/grants e testes com contas A/B e acesso anônimo.
 3. Autenticação/sessão, confirmação/recuperação por e-mail, refresh, logout e isolamento por conta.
 4. Push idempotente e pull paginado, confirmação perdida, edições em voo, categorias/IDs fixos e duplicação de requests.
