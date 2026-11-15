@@ -42,5 +42,3 @@ export default function ProductDetails() {
     <Modal visible={confirm} transparent animationType="fade" onRequestClose={() => { if (!busy) setConfirm(false); }}><View style={{ flex: 1, backgroundColor: '#000B', justifyContent: 'center', padding: 28 }}><View style={styles.card}><Text style={styles.heading}>Excluir este desejo?</Text><Text style={styles.body}>O produto será removido da sua lista. Essa ação não pode ser desfeita pelo aplicativo.</Text><Button title="Cancelar" disabled={busy} onPress={() => setConfirm(false)} /><Button title={busy ? 'Excluindo…' : 'Confirmar exclusão'} disabled={busy} onPress={remove} style={{ backgroundColor: '#FFB4BD' }} /></View></View></Modal>
   </ScrollView>;
 }
-
-
