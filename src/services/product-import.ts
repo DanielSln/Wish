@@ -67,7 +67,28 @@ function price(value: unknown, currency: unknown): number | null {
   try { return parsePrice(String(value)); } catch { return null; }
 }
 
-export function extractProduct(html: string, sourceUrl: string): ImportPreview {
+// Dates declared by the page only disqualify a price; they never prove it is current.
+function offerDate(value: unknown, endOfDay: boolean): number | null {
+  if (typeof value !== 'string') return null;
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!day && !/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
+  const date = Date.parse(day ? value + (endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z') : value);
+  if (!Number.isFinite(date) || (day && new Date(date).toISOString().slice(0, 10) !== value)) return null;
+  return date;
+}
+function offerIsTimely(offer: Record<string, unknown>, now: number): boolean {
+  for (const field of ['priceValidUntil', 'validThrough']) {
+    if (!(field in offer)) continue;
+    const end = offerDate(offer[field], true);
+    if (end === null || end < now) return false;
+  }
+  if ('validFrom' in offer) {
+    const start = offerDate(offer.validFrom, false);
+    if (start === null || start > now) return false;
+  }
+  return true;
+}
+export function extractProduct(html: string, sourceUrl: string, now = Date.now()): ImportPreview {
   const source = importUrl(sourceUrl);
   if (html.length > MAX_HTML) throw new Error('A página é muito grande para importar. Cadastre o produto manualmente.');
   const meta: Record<string, string> = {};
@@ -98,7 +119,8 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
   const offers = Array.isArray(item.offers) ? item.offers : item.offers ? [item.offers] : [];
   const offer = offers.length === 1 ? record(offers[0]) : {};
   const isAggregate = hasSchemaType(offer['@type'], 'AggregateOffer');
-  const knownPrice = offers.length ? (isAggregate ? null : price(offer.price, offer.priceCurrency)) : price(meta['product:price:amount'], meta['product:price:currency']);
+  const untimely = offers.length === 1 && !offerIsTimely(offer, now);
+  const knownPrice = offers.length ? (isAggregate || untimely ? null : price(offer.price, offer.priceCurrency)) : price(meta['product:price:amount'], meta['product:price:currency']);
   const product: ImportedProduct = {
     name,
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
@@ -109,6 +131,7 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
   };
   return { product, warnings: [
     'Confira os dados na loja antes de salvar. O preço pode variar por vendedor, variante, frete ou promoção.',
+    ...(untimely ? ['A validade do preço está vencida, futura ou não pôde ser confirmada; nenhum valor foi preenchido.'] : []),
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
     ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
   ] };

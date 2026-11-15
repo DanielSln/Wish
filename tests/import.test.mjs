@@ -138,3 +138,25 @@ test('timeout aborts a slow body and cancels its stream', async t => {
   await rejection;
   assert.equal(cancelled, true);
 });
+
+test('expired, future or malformed offer validity never becomes a current price or falls back to OG', () => {
+  const now=Date.parse('2026-11-15T12:00:00Z');
+  for(const dates of [
+    {priceValidUntil:'2026-11-14'}, {validThrough:'2026-11-15T11:59:59Z'},
+    {validFrom:'2026-11-16'}, {priceValidUntil:'not-a-date'}, {priceValidUntil:null},
+    {priceValidUntil:'2026-02-31'}, {validFrom:'2026-11-15T00:00:00'},
+  ]) {
+    const result=extractProduct(json({...product,offers:{...product.offers,...dates}})+"<meta property='product:price:amount' content='12'><meta property='product:price:currency' content='BRL'>",url,now);
+    assert.equal(result.product.price_cents,null);assert.equal(result.product.name,'Fone & música');
+    assert.equal(result.product.original_url,url);assert.equal(result.product.description,'Descrição do produto');
+    assert.ok(result.warnings.some(w=>w.includes('validade')));
+  }
+});
+
+test('offer validity boundaries allow a declared BRL price without claiming a live price', () => {
+  const now=Date.parse('2026-11-15T12:00:00Z');
+  for(const dates of [{priceValidUntil:'2026-11-15'},{validFrom:'2026-11-15'},{validThrough:'2026-11-15T12:00:00Z'},{priceValidUntil:'2026-11-15T13:00:00+01:00'}]) {
+    const result=extractProduct(json({...product,offers:{...product.offers,...dates}}),url,now);
+    assert.equal(result.product.price_cents,12990);assert.ok(result.warnings.some(w=>w.includes('Confira')));
+  }
+});
