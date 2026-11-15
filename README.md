@@ -51,7 +51,9 @@ O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer
 
 Consultas têm cancelamento e limite de tempo de 12 segundos. Respostas HTTP de erro, páginas sem metadados, conteúdo não HTML e páginas acima de 2 milhões de caracteres são tratados com mensagem e alternativa manual. O cabeçalho Content-Length também é verificado; quando ausente, o corpo é recebido antes de verificar seu tamanho. Não há consulta periódica de preço ou garantia de suporte a uma loja específica. Páginas dinâmicas e bloqueios CORS no navegador podem impedir a importação; nesse caso, **Preencher manualmente** preserva o link HTTPS válido. Cadastros sem rede continuam disponíveis pelo botão **Novo desejo**.
 
-Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. Esta branch parte da Fase 2 do PR #1, ainda não incorporada à main; o PR da Fase 3 inclui essa base, sem merge automático.
+Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. Esta branch parte da Fase 2 do [PR #1](https://github.com/DanielSln/Wish/pull/1), ainda não incorporada à main. O [PR #2](https://github.com/DanielSln/Wish/pull/2) usa a branch da Fase 2 como base para mostrar somente a Fase 3; nenhum merge automático foi realizado.
+
+Revisão das fases e pendências: [docs/PHASE-2-3-REVIEW.md](docs/PHASE-2-3-REVIEW.md). Auditoria atual por dependência: [docs/SECURITY-REVIEW-2026-11-15.md](docs/SECURITY-REVIEW-2026-11-15.md). Plano técnico da Fase 4, ainda não implementada: [docs/PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md).
 
 ## Verificação
 

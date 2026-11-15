@@ -2,12 +2,14 @@
 
 Data: 15/11/2026.
 
+Atualização de publicação: os commits c21b035 e 1dd5961 foram recuperados e publicados em feature/link-import. O [PR #2](https://github.com/DanielSln/Wish/pull/2) está aberto com base em feature/product-management, dependente do PR #1. A restrição de escrita relatada abaixo é histórica e foi resolvida. A revisão atual, correções adicionais e revalidação estão em PHASE-2-3-REVIEW.md; nenhum merge foi realizado.
+
 ## Estado encontrado
 
 - main em 56c49d8: estrutura Expo SDK 58, Router, TypeScript e tela inicial escura.
 - feature/product-management em 2b7f495: Fase 2 implementada, PR #1 aberto. Foram lidos estrutura, telas, repositório SQLite, migrações, validação, testes, dependências e commits dessa branch antes das alterações.
 - Fase 2 validada nesta retomada: 3 testes SQLite, TypeScript e lint passaram. Não havia importação por links, autenticação/backup ou comparação de preços. A primeira fase sem implementação nas branches examinadas era a Fase 3.
-- A branch feature/link-import preserva os commits da Fase 2 e acrescenta somente a importação; o PR é destinado à main e inclui essa dependência.
+- A branch feature/link-import preserva os commits da Fase 2 e acrescenta somente a importação; após publicação, a base do PR foi definida como feature/product-management para evitar duplicação no diff.
 
 ## Implementação
 
@@ -33,7 +35,7 @@ Data: 15/11/2026.
 
 Os comandos Expo foram executados com EXPO_NO_TELEMETRY=1 e diretório de estado/cache gravável no workspace, sem alterar HOME ou versionar configurações locais. O Node emite aviso de detecção de módulo nos testes TypeScript existentes; os testes passam.
 
-## Publicação pendente
+## Histórico da tentativa de publicação anterior
 
 Os commits foram criados localmente na branch feature/link-import. O push para DanielSln/Wish retornou HTTP 403 (Permission denied), e a tentativa de criar a branch pela integração GitHub retornou 403 Resource not accessible by integration. Portanto, a branch não foi publicada e nenhum PR novo foi criado. Nenhum merge foi realizado. Após habilitar escrita no repositório para este ambiente/integração, envie a branch e abra o PR para main, informando que inclui a base do PR #1.
 
