@@ -16,7 +16,9 @@
         "foregroundImage": "./assets/brand/adaptive-foreground.png",
         "monochromeImage": "./assets/brand/monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.danielsln.wish",
+      "versionCode": 1
     },
     "web": {
       "output": "server",
