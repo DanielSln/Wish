@@ -21,7 +21,8 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
       if (filters.category) { where.push('p.category_id = ?'); args.push(filters.category); }
       if (filters.status) { where.push('p.status = ?'); args.push(filters.status); }
       const order = { newest: 'p.created_at DESC', oldest: 'p.created_at ASC', 'price-asc': 'p.price_cents IS NULL, p.price_cents ASC', 'price-desc': 'p.price_cents IS NULL, p.price_cents DESC', priority: "CASE p.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END" };
-      const ordering = order[filters.sort ?? 'newest'] ?? order.newest;
+      const sort = filters.sort ?? 'newest';
+      const ordering = Object.hasOwn(order, sort) ? order[sort] : order.newest;
       return db.getAllAsync<Product>(`SELECT p.*,c.name AS category_name FROM products p JOIN categories c ON c.id=p.category_id WHERE ${where.join(' AND ')} ORDER BY ${ordering}, p.id`, ...args);
     },
     get: (id: string) => db.getFirstAsync<Product>('SELECT p.*,c.name AS category_name FROM products p JOIN categories c ON c.id=p.category_id WHERE p.id=? AND p.deleted_at IS NULL', id),
