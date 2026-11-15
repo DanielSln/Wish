@@ -13,7 +13,7 @@ export const defaultCategories = [
 export async function migrate(db: Database) {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
   const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  if ((version?.user_version ?? 0) > 1) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
+  if ((version?.user_version ?? 0) > 2) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
   if ((version?.user_version ?? 0) === 0) {
     // Runs before screens mount, so no other query can join this transaction.
     await db.withTransactionAsync(async () => {
@@ -39,6 +39,11 @@ export async function migrate(db: Database) {
       const now = new Date().toISOString();
       for (const [id, name] of defaultCategories) await db.runAsync('INSERT INTO categories(id,name,created_at,updated_at) VALUES (?,?,?,?)', id, name, now, now);
       await db.execAsync('PRAGMA user_version = 1');
+    });
+  }
+  if ((version?.user_version ?? 0) < 2) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync('CREATE TABLE app_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL); PRAGMA user_version = 2;');
     });
   }
 }

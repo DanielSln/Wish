@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { migrate } from '../src/data/migrations.ts';
 import { createRepository } from '../src/data/repository.ts';
 import { parsePrice, validateProduct } from '../src/domain/product.ts';
+import { resolveAppearance, palettes } from '../src/theme/palette.ts';
 function adapter(raw) {
   return {
     async execAsync(sql) { raw.exec(sql); },
@@ -54,7 +55,7 @@ test('SQLite: migrate, create, edit, categories, search, sorting, status, deleti
     await migrate(db); assert.equal((await repo.list()).length, 2);
     raw.close(); raw = new DatabaseSync(path); db = adapter(raw); await migrate(db); repo = createRepository(db, randomUUID);
     assert.equal((await repo.list()).length, 2); assert.equal((await repo.get(a)).notes, 'Nova anotação'); assert.equal((await repo.categories()).length, 4);
-    raw.exec('PRAGMA user_version = 2'); await assert.rejects(migrate(db), /mais recente/);
+    raw.exec('PRAGMA user_version = 3'); await assert.rejects(migrate(db), /mais recente/);
     assert.equal(raw.prepare('SELECT count(*) AS n FROM products').get().n, 3);
   } finally { raw.close(); rmSync(dir, { recursive: true, force: true }); }
 });
@@ -71,4 +72,73 @@ test('validation: Brazilian currency, unsafe URLs and invalid values', () => {
   for (const priority of ['constructor', '__proto__', 'toString', 'urgent']) {
     assert.equal(validateProduct({ ...input('x'), priority }).priority, 'Selecione uma prioridade válida.');
   }
+});
+
+test('categories: rename keeps references, deletion protects pending/purchased and reuses tombstones', async () => {
+  const raw = new DatabaseSync(':memory:');
+  try {
+    const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
+    const id = await repo.addCategory('Livros'); const productId = await repo.save(input(id));
+    await repo.renameCategory(id, 'Leitura');
+    assert.equal((await repo.get(productId)).category_name, 'Leitura');
+    await assert.rejects(repo.removeCategory(id), /Mova/);
+    await repo.setStatus(productId, 'purchased');
+    await assert.rejects(repo.removeCategory(id), /incluindo os comprados/);
+    await assert.rejects(repo.renameCategory(id, 'Casa'), /já está em uso/);
+    await assert.rejects(repo.renameCategory(id, '  '), /1 a 60/);
+    const other = await repo.addCategory('Outros');
+    await repo.save({ ...(await repo.get(productId)), category_id: other }, productId);
+    await repo.removeCategory(id);
+    assert.equal((await repo.categories()).some(c => c.id === id), false);
+    await assert.rejects(repo.save(input(id)), /categoria disponível/);
+    assert.equal(await repo.addCategory('leitura'), id);
+    assert.equal((await repo.categories()).find(c => c.id === id).name, 'leitura');
+    await repo.remove(productId); await repo.removeCategory(other);
+    assert.equal(raw.prepare('PRAGMA foreign_key_check').all().length, 0);
+    assert.equal((await repo.list()).length, 0);
+  } finally { raw.close(); }
+});
+
+test('purchased uses the same catalog, updates live and excludes deleted products', async () => {
+  const raw = new DatabaseSync(':memory:');
+  try {
+    const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
+    assert.deepEqual(await repo.list({ status: 'purchased' }), []);
+    const id = await repo.save(input((await repo.categories())[0].id));
+    await repo.setStatus(id, 'purchased');
+    assert.equal((await repo.list({ status: 'purchased' }))[0].id, id);
+    assert.equal((await repo.list()).length, 1);
+    await repo.setStatus(id, 'pending');
+    assert.deepEqual(await repo.list({ status: 'purchased' }), []);
+    await repo.setStatus(id, 'purchased'); await repo.remove(id);
+    assert.deepEqual(await repo.list({ status: 'purchased' }), []);
+  } finally { raw.close(); }
+});
+
+test('v1 to v2 migration preserves products/categories and rolls back settings failure', async () => {
+  const raw = new DatabaseSync(':memory:');
+  try {
+    const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
+    const id = await repo.save(input((await repo.categories())[0].id));
+    raw.exec('DROP TABLE app_settings; PRAGMA user_version=1');
+    const fail = { ...db, execAsync: async sql => { if (sql.includes('CREATE TABLE app_settings')) throw new Error('disk full'); return db.execAsync(sql); } };
+    await assert.rejects(migrate(fail), /disk full/);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 1);
+    assert.equal((await repo.get(id)).name, 'Notebook');
+    await migrate(db); await migrate(db);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 2);
+    assert.equal((await repo.categories()).length, 3);
+    raw.prepare("INSERT INTO app_settings(key,value) VALUES ('appearance','dark')").run();
+    await migrate(db);
+    assert.equal(raw.prepare("SELECT value FROM app_settings WHERE key='appearance'").get().value, 'dark');
+  } finally { raw.close(); }
+});
+
+test('appearance respects explicit choice and follows system without changing product data', () => {
+  assert.equal(resolveAppearance('system', 'dark'), 'dark');
+  assert.equal(resolveAppearance('system', null), 'light');
+  assert.equal(resolveAppearance('light', 'dark'), 'light');
+  assert.equal(resolveAppearance('dark', 'light'), 'dark');
+  assert.equal(palettes.light.accent, '#A9D8F4');
+  assert.equal(palettes.light.primary, '#287BB5');
 });
