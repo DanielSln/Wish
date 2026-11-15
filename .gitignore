@@ -49,3 +49,11 @@ example
 *.keystore
 credentials.json
 service-account*.json
+
+# Local databases and generated Android bundles
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+dist-android/
