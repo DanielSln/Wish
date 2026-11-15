@@ -23,6 +23,7 @@ export default function HomeScreen() {
   return <SafeAreaView style={styles.page}><FlatList contentContainerStyle={styles.content} data={loading || error ? [] : products} keyExtractor={p => p.id} ListHeaderComponent={<View style={{ gap: 18 }}>
     <View style={[styles.row, { justifyContent: 'space-between' }]}><Text style={styles.title}>wish<Text style={{ color: colors.purple }}>.</Text></Text><Button title="+ Novo desejo" onPress={() => router.push('/products/new')} /></View>
     <Text style={styles.body}>Seus próximos planos, um desejo de cada vez.</Text>
+    <Button title="Importar por link" onPress={() => router.push('/products/import')} />
     <TextInput accessibilityLabel="Pesquisar por nome" placeholder="Pesquisar por nome…" placeholderTextColor={colors.muted} style={styles.input} value={filters.search ?? ''} onChangeText={search => setFilters(f => ({ ...f, search }))} />
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}><Chip title="Todas" active={!filters.category} onPress={() => setFilters(f => ({ ...f, category: undefined }))} />{categories.map(c => <Chip key={c.id} title={c.name} active={filters.category === c.id} onPress={() => setFilters(f => ({ ...f, category: c.id }))} />)}</ScrollView>
     <View style={styles.row}>{[['','Todos'],['pending','Pendentes'],['purchased','Comprados']].map(([status, label]) => <Chip key={status} title={label} active={(filters.status ?? '') === status} onPress={() => setFilters(f => ({ ...f, status }))} />)}</View>

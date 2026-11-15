@@ -1,5 +1,9 @@
 # Auditoria de dependências — Fase 2
 
+## Revalidação na Fase 3 — 15/11/2026
+
+npm ci e npm audit foram executados novamente: 10 ocorrências moderadas, nenhuma alta ou crítica, nas mesmas cadeias minimatch e uuid descritas abaixo. Nenhuma dependência foi adicionada ou atualizada nesta fase. O audit continua sugerindo Expo 52 como correção principal incompatível; não foi executado --force ou override de versão principal. A importação usa fetch com HTTPS, sem credenciais na URL, sem proxy/CAPTCHA/login ou execução de scripts, e mensagens de fallback quando a loja recusa acesso. Dados extraídos são tratados como texto e revisados antes de salvar. O serviço cliente não garante isolamento de DNS/redirects; não deve ser reutilizado como endpoint servidor sem controles próprios de rede.
+
 Data: 12/11/2026. Projeto mantido em Expo SDK 58.
 
 ## Oito alertas originais

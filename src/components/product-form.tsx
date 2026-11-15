@@ -5,7 +5,7 @@ import { useProducts } from '@/data/use-products';
 import { type Category, type ProductInput, type Priority, parsePrice, priorityLabels, validateProduct } from '@/domain/product';
 import { Button, Chip, colors, styles } from './ui';
 const empty: ProductInput = { name: '', description: '', category_id: '', priority: 'medium', image_url: '', price_cents: null, desired_price_cents: null, store: '', original_url: '', notes: '', status: 'pending' };
-export function ProductForm({ id }: { id?: string }) {
+export function ProductForm({ id, initial }: { id?: string; initial?: Partial<ProductInput> }) {
   const repo = useProducts();
   const [input, setInput] = useState<ProductInput>(empty);
   const [price, setPrice] = useState(''); const [desiredPrice, setDesiredPrice] = useState('');
@@ -21,10 +21,13 @@ export function ProductForm({ id }: { id?: string }) {
       if (id && !product) { setLoadError('Produto não encontrado.'); return; }
       setCategories(cats);
       if (product) { setInput(product); setPrice(product.price_cents === null ? '' : (product.price_cents / 100).toFixed(2).replace('.', ',')); setDesiredPrice(product.desired_price_cents === null ? '' : (product.desired_price_cents / 100).toFixed(2).replace('.', ',')); }
-      else setInput({ ...empty, category_id: cats[0]?.id ?? '' });
+      else {
+        setInput({ ...empty, ...initial, category_id: cats[0]?.id ?? '' });
+        setPrice(initial?.price_cents == null ? '' : (initial.price_cents / 100).toFixed(2).replace('.', ','));
+      }
     }).catch(() => { if (alive) setLoadError('Não foi possível carregar o formulário.'); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [repo, id, retry]);
+  }, [repo, id, retry, initial]);
   async function save() {
     if (busy) return;
     const next = { ...input, name: input.name.trim(), original_url: input.original_url.trim(), image_url: input.image_url.trim() };
