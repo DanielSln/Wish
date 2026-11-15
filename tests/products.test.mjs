@@ -41,6 +41,9 @@ test('SQLite: migrate, create, edit, categories, search, sorting, status, deleti
     assert.equal((await repo.list({ sort: 'priority' }))[0].id, a);
     assert.equal((await repo.list({ sort: 'oldest' }))[0].id, a);
     assert.equal((await repo.list({ sort: 'newest' }))[2].id, a);
+    for (const sort of ['constructor', '__proto__', 'toString', 'newest; DELETE FROM products']) {
+      assert.deepEqual(await repo.list({ sort }), await repo.list({ sort: 'newest' }));
+    }
     await repo.save({ ...input(custom), name: 'Notebook atualizado', notes: 'Nova anotação' }, a);
     const updated = await repo.get(a); assert.equal(updated.notes, 'Nova anotação'); assert.equal(updated.created_at, before.created_at); assert.notEqual(updated.updated_at, before.updated_at);
     await repo.setStatus(a, 'purchased'); assert.equal((await repo.list({ status: 'purchased', category: custom, search: 'Notebook' })).length, 1);
@@ -65,4 +68,7 @@ test('validation: Brazilian currency, unsafe URLs and invalid values', () => {
   for (const value of ['-1', 'NaN', '1.299,90', '1,001', 'Infinity', '999999999999']) assert.throws(() => parsePrice(value));
   const errors = validateProduct({ ...input('x'), name: ' ', image_url: 'javascript:alert(1)', original_url: 'file:///secret', price_cents: -1 });
   assert.ok(errors.name); assert.ok(errors.image_url); assert.ok(errors.original_url); assert.ok(errors.price_cents);
+  for (const priority of ['constructor', '__proto__', 'toString', 'urgent']) {
+    assert.equal(validateProduct({ ...input('x'), priority }).priority, 'Selecione uma prioridade válida.');
+  }
 });

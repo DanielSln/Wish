@@ -28,7 +28,7 @@ export function validateProduct(input: ProductInput): Record<string, string> {
   if (!input.name.trim()) errors.name = 'Informe o nome do produto.';
   else if (input.name.length > 160) errors.name = 'Use até 160 caracteres.';
   if (!input.category_id) errors.category_id = 'Selecione uma categoria.';
-  if (!(input.priority in priorityLabels)) errors.priority = 'Selecione uma prioridade válida.';
+  if (!Object.hasOwn(priorityLabels, input.priority)) errors.priority = 'Selecione uma prioridade válida.';
   if (!['pending', 'purchased'].includes(input.status)) errors.status = 'Status inválido.';
   for (const key of ['original_url', 'image_url'] as const) {
     if (input[key] && (!isHttpUrl(input[key]) || input[key].length > 2048)) errors[key] = 'Informe um endereço http:// ou https:// válido (até 2048 caracteres).';
