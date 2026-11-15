@@ -1,5 +1,15 @@
 # Fase 3 — revisão de segurança para integração
 
+## Estado após integração autorizada da Fase 2
+
+Em 15/11/2026, o PR #1 foi integrado com commit de merge 0c36cbaff599ba4f5c826877f011f4ab54321133, preservando ee10980. Antes do merge passaram 3/3 testes, TypeScript, lint, compatibilidade Expo, Expo Doctor 20/20 e diff --check; foram removidas apenas linhas em branco extras de dois arquivos no commit 5d6081c. Nenhum check de CI estava configurado no commit remoto.
+
+feature/link-import recebeu a nova main no commit de sincronização 929ac04, sem conflitos e sem reescrever commits. O PR #2 foi atualizado para base main. A equivalência do patch de código/testes/configuração da Fase 3 foi verificada por git patch-id --stable antes/depois da sincronização; a Fase 2 não aparece novamente no diff. Após a sincronização passaram 13/13 testes, TypeScript, lint, compatibilidade Expo, Expo Doctor 20/20 e diff --check. As proteções de hosts, redirects e limite de resposta estão cobertas pela suíte. O PR #2 permanece aberto, tecnicamente pronto para integração mediante nova autorização, e NÃO foi integrado. Sem Supabase, novas funcionalidades, atualização de dependências ou force push.
+
+O registro abaixo descreve a revisão anterior à integração da Fase 2; os riscos residuais e limites de teste em dispositivo continuam aplicáveis. Android/iOS físico não foi testado nesta tarefa.
+
+## Registro da revisão anterior
+
 15/11/2026. PR #2, base feature/product-management enquanto o PR #1 permanece aberto. Nenhum PR foi integrado. As correções da base foram incorporadas à branch dependente por sincronização local de branches, preservando os commits anteriores; main não foi alterada.
 
 ## Problemas corrigidos
