@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { fetch as expoFetch } from 'expo/fetch';
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
 import { ProductForm } from '@/components/product-form';
 import { ProductImage } from '@/components/product-image';
@@ -21,7 +22,7 @@ export default function ImportScreen() {
     active.current = controller;
     setBusy(true); setError(''); setPreview(null);
     try {
-      const result = await importProduct(url, controller.signal);
+      const result = await importProduct(url, controller.signal, expoFetch);
       if (active.current === controller) setPreview(result);
     } catch (e) {
       if (active.current === controller) setError(e instanceof Error ? e.message : 'Não foi possível importar este link.');
@@ -38,6 +39,7 @@ export default function ImportScreen() {
   return <ScrollView style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Text style={styles.heading}>Um link, um novo desejo</Text>
     <Text style={styles.body}>Cole o link HTTPS de um produto. A consulta acessa a loja pela sua conexão e usa apenas os metadados que ela disponibilizar. Nada é salvo até você revisar e confirmar.</Text>
+    <Text style={styles.body}>Consulta automática habilitada para endereços diretos da Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia. Para outras lojas ou links encurtados, use o cadastro manual.</Text>
     <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!busy} onChangeText={value => { setUrl(value); setPreview(null); setError(''); }} placeholder="https://loja.com.br/produto" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={2048} />
     <Button title={busy ? 'Consultando loja…' : 'Buscar informações'} disabled={busy || !url.trim()} onPress={load} />
     {busy && <><ActivityIndicator color={colors.purple} /><Button title="Cancelar consulta" onPress={() => { active.current?.abort(); active.current = null; setBusy(false); }} /></>}

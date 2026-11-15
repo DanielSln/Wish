@@ -2,6 +2,8 @@
 
 Data: 15/11/2026. Revisão de código e testes; não constitui aprovação/merge automático.
 
+Revisão posterior para integração: [PHASE-2-INTEGRATION.md](PHASE-2-INTEGRATION.md) e [PHASE-3-INTEGRATION.md](PHASE-3-INTEGRATION.md). A validação programática de prioridade/ordenação foi corrigida na branch do PR #1; o PR #2 recebeu essa base e controles adicionais de destinos, redirects e tamanho de resposta. Os resultados abaixo preservam o registro da publicação anterior.
+
 ## Estado recuperado e organização
 
 - main: 56c49d8; feature/product-management: 2b7f495; PR #1 aberto para main.

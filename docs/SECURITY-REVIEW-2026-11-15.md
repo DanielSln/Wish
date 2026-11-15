@@ -1,5 +1,7 @@
 # Auditoria atual — 15/11/2026
 
+Atualização da preparação para integração: as limitações do importador descritas neste registro foram mitigadas por lista de hosts/CDNs exatos, transporte expo/fetch sem redirects e leitura em streaming limitada. O estado atual e os riscos residuais estão em [PHASE-3-INTEGRATION.md](PHASE-3-INTEGRATION.md). A auditoria de dependências abaixo continua sendo o último resultado registrado; nenhuma dependência foi alterada nesta preparação.
+
 Executado npm audit --json sobre o lockfile existente, seguido de npm ls e consulta às versões/dependências publicadas no registry. Resultado: **10 ocorrências moderadas, zero altas/críticas**, provenientes de **duas vulnerabilidades de origem**. Nenhuma dependência/lockfile foi alterado, nenhum override foi imposto e npm audit fix --force não foi utilizado.
 
 ## Dependências apontadas individualmente

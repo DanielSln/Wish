@@ -1,5 +1,6 @@
 import { parsePrice } from '../domain/product.ts';
 import type { ProductInput } from '../domain/product.ts';
+import { importHosts, importImageHosts } from './import-policy.ts';
 
 export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url'>;
 export type ImportPreview = { product: ImportedProduct; warnings: string[] };
@@ -18,7 +19,16 @@ export function importUrl(value: string): string {
   }
   if (url.href.length > 2048) throw new Error('O link deve ter até 2048 caracteres.');
   url.hash = '';
+  url.hostname = host;
   return url.href;
+}
+
+export function importDestination(value: string): string {
+  const url = importUrl(value);
+  if (!importHosts.has(new URL(url).hostname)) {
+    throw new Error('Esta loja ainda não está habilitada para consulta automática. Use o cadastro manual para preservar o link.');
+  }
+  return url;
 }
 
 function decode(value: string): string {
@@ -46,7 +56,10 @@ function imageUrl(value: unknown, base: string): string {
   const candidate = Array.isArray(value) ? value[0] : value;
   const source = typeof candidate === 'string' ? candidate : record(candidate).url;
   if (typeof source !== 'string' || !source.trim()) return '';
-  try { return importUrl(new URL(source, base).href); } catch { return ''; }
+  try {
+    const url = importUrl(new URL(source, base).href);
+    return importImageHosts.has(new URL(url).hostname) ? url : '';
+  } catch { return ''; }
 }
 function price(value: unknown, currency: unknown): number | null {
   // Never infer currency, use an aggregate lowPrice or convert foreign prices.
@@ -101,26 +114,51 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
   ] };
 }
 
-export async function importProduct(value: string, signal?: AbortSignal, request: typeof fetch = fetch): Promise<ImportPreview> {
-  const url = importUrl(value);
+// A streaming, redirect-aware transport is mandatory. UI uses expo/fetch on every platform.
+export type ImportRequest = (url: string, init: RequestInit) => Promise<Response>;
+export async function importProduct(value: string, signal: AbortSignal | undefined, request: ImportRequest): Promise<ImportPreview> {
+  const url = importDestination(value);
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) controller.abort();
   const timeout = setTimeout(abort, 12000);
   try {
-    const response = await request(url, { signal: controller.signal, credentials: 'omit', headers: { Accept: 'text/html' } });
+    if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+    const response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: 'error', headers: { Accept: 'text/html' } });
+    if (response.redirected || (response.status >= 300 && response.status < 400)) {
+      throw new Error('Redirecionamentos não são permitidos. Cole o endereço final do produto ou use o cadastro manual.');
+    }
     if (!response.ok) throw new Error(`A loja recusou ou não encontrou a página (HTTP ${response.status}). Use o cadastro manual.`);
-    if (response.url) importUrl(response.url);
+    if (response.url && importDestination(response.url) !== url) throw new Error('O endereço da resposta mudou. Use o link direto ou o cadastro manual.');
     const contentType = response.headers.get('content-type') ?? '';
-    if (!/text\/html|application\/xhtml\+xml/i.test(contentType)) throw new Error('Este link não retornou uma página de produto HTML.');
+    if (!/^(text\/html|application\/xhtml\+xml)(?:\s*;|\s*$)/i.test(contentType)) throw new Error('Este link não retornou uma página de produto HTML.');
     if (Number(response.headers.get('content-length')) > MAX_HTML) throw new Error('A página é muito grande para importar. Use o cadastro manual.');
-    return extractProduct(await response.text(), response.url || url);
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('A consulta não disponibilizou leitura limitada. Use o cadastro manual.');
+    const bytes = new Uint8Array(MAX_HTML);
+    let size = 0;
+    try {
+      while (true) {
+        if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+        const { done, value: chunk } = await reader.read();
+        if (done) break;
+        if (size + chunk.byteLength > MAX_HTML) throw new Error('A página é muito grande para importar. Use o cadastro manual.');
+        bytes.set(chunk, size);
+        size += chunk.byteLength;
+      }
+      if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+      return extractProduct(new TextDecoder().decode(bytes.subarray(0, size)), url);
+    } finally {
+      try { await reader.cancel(); } catch { /* The request is also aborted below. */ }
+      reader.releaseLock();
+    }
   } catch (error) {
     if (controller.signal.aborted) throw new Error('Importação cancelada ou tempo esgotado. Tente novamente ou cadastre manualmente.');
     if (error instanceof TypeError) throw new Error('Não foi possível acessar a loja. Confira a conexão; a loja pode bloquear importação ou acesso pelo navegador. Use o cadastro manual.');
     throw error;
   } finally {
+    controller.abort(); // Also stops downloads rejected by headers before opening a reader.
     clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
   }
