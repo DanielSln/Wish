@@ -1,9 +1,12 @@
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useState } from 'react';
-import { colors } from './ui';
+import { useUI } from './ui';
+import { Mark } from './brand';
 export function ProductImage({ uri, large = false }: { uri: string; large?: boolean }) {
   const [failedUri, setFailedUri] = useState<string | null>(null);
-  const height = large ? 240 : 100;
-  if (!uri || failedUri === uri) return <View accessibilityLabel="Produto sem imagem disponível" style={{ height, width: large ? '100%' : 90, borderRadius: 16, backgroundColor: '#30283F', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.purple, fontSize: 36 }}>✦</Text></View>;
-  return <Image accessibilityLabel="Imagem do produto" source={{ uri }} onError={() => setFailedUri(uri)} resizeMode="contain" style={{ height, width: large ? '100%' : 90, borderRadius: 16, backgroundColor: '#25232C' }} />;
+  const { colors } = useUI();
+  const height = large ? 260 : 98;
+  const frame = { height, width: large ? '100%' as const : 98, borderRadius: 16, backgroundColor: colors.soft };
+  if (!uri || failedUri === uri) return <View accessibilityLabel="Produto sem imagem disponível" style={[frame,{alignItems:'center',justifyContent:'center'}]}><Mark size={large ? 62 : 38} /></View>;
+  return <Image accessibilityLabel="Imagem do produto" source={{ uri }} onError={() => setFailedUri(uri)} resizeMode="contain" style={frame} />;
 }

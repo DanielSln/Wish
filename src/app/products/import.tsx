@@ -3,11 +3,12 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
 import { ProductForm } from '@/components/product-form';
 import { ProductImage } from '@/components/product-image';
-import { Button, colors, styles } from '@/components/ui';
+import { Button, useUI } from '@/components/ui';
 import { money, type ProductInput } from '@/domain/product';
 import { importProduct, importUrl, type ImportPreview } from '@/services/product-import';
 
 export default function ImportScreen() {
+  const { colors, styles } = useUI();
   const [url, setUrl] = useState('');
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [initial, setInitial] = useState<Partial<ProductInput> | null>(null);
@@ -42,7 +43,7 @@ export default function ImportScreen() {
     <Text style={styles.body}>Consulta automática habilitada para endereços diretos da Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia. Para outras lojas ou links encurtados, use o cadastro manual.</Text>
     <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!busy} onChangeText={value => { setUrl(value); setPreview(null); setError(''); }} placeholder="https://loja.com.br/produto" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={2048} />
     <Button title={busy ? 'Consultando loja…' : 'Buscar informações'} disabled={busy || !url.trim()} onPress={load} />
-    {busy && <><ActivityIndicator color={colors.purple} /><Button title="Cancelar consulta" onPress={() => { active.current?.abort(); active.current = null; setBusy(false); }} /></>}
+    {busy && <><ActivityIndicator color={colors.accent} /><Button title="Cancelar consulta" onPress={() => { active.current?.abort(); active.current = null; setBusy(false); }} /></>}
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {preview && <View style={styles.card}>
       <Text style={styles.heading}>Prévia do produto</Text>
