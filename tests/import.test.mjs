@@ -30,6 +30,9 @@ test('ambiguous products are refused and uncertain prices stay unknown', () => {
   for (const offers of [
     { price: '10', priceCurrency: 'USD' }, { price: '10' },
     { '@type': 'AggregateOffer', lowPrice: '10', priceCurrency: 'BRL' },
+    { '@type': ['Offer', 'AggregateOffer'], price: '10', priceCurrency: 'BRL' },
+    { '@type': 'https://schema.org/AggregateOffer', price: '10', priceCurrency: 'BRL' },
+    { '@type': 'http://schema.org/AggregateOffer', price: '10', priceCurrency: 'BRL' },
     [{ price: '10', priceCurrency: 'BRL' }, { price: '20', priceCurrency: 'BRL' }],
     { price: 'NaN', priceCurrency: 'BRL' }, { price: '-10', priceCurrency: 'BRL' },
   ]) {
@@ -40,7 +43,7 @@ test('ambiguous products are refused and uncertain prices stay unknown', () => {
   assert.equal(extractProduct(json({ ...product, offers: { price: 0, priceCurrency: 'BRL' } }), url).product.price_cents, 0);
 });
 test('invalid links, absent metadata, huge pages and unsafe images', () => {
-  for (const value of ['bad', 'http://loja.example/p', 'https://user:pass@loja.example/p', 'https://localhost/p', 'https://127.0.0.1/p', 'https://10.1.1.1/p', 'https://[::1]/p', 'https://loja.local/p', 'https://loja.example:3000/p', 'file:///tmp/a']) {
+  for (const value of ['bad', 'http://loja.example/p', 'https://user:pass@loja.example/p', 'https://localhost/p', 'https://127.0.0.1/p', 'https://10.1.1.1/p', 'https://[::1]/p', 'https://loja.local/p', 'https://loja.local./p', 'https://loja.localhost./p', 'https://localhost./p', 'https://loja.example:3000/p', 'file:///tmp/a']) {
     assert.throws(() => importUrl(value));
   }
   assert.equal(importUrl(` ${url}#detalhes `), url);

@@ -9,7 +9,8 @@ const MAX_HTML = 2_000_000;
 export function importUrl(value: string): string {
   let url: URL;
   try { url = new URL(value.trim()); } catch { throw new Error('Informe um link HTTPS válido da loja.'); }
-  const host = url.hostname.toLowerCase();
+  // A trailing DNS root dot must not bypass local-host checks.
+  const host = url.hostname.toLowerCase().replace(/\.$/, '');
   if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') ||
       !host.includes('.') || host.endsWith('.local') || host.endsWith('.localhost') ||
       host.includes(':') || /^[\d.]+$/.test(host)) {
@@ -30,6 +31,10 @@ function decode(value: string): string {
 }
 const text = (value: unknown, max: number) => typeof value === 'string' ? decode(value).replace(/<[^>]*>/g, '').trim().slice(0, max) : '';
 const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+function hasSchemaType(value: unknown, expected: string): boolean {
+  const types = Array.isArray(value) ? value : [value];
+  return types.some(type => type === expected || type === `https://schema.org/${expected}` || type === `http://schema.org/${expected}`);
+}
 function attributes(tag: string) {
   const result: Record<string, string> = {};
   for (const match of tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g)) {
@@ -65,8 +70,7 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
     if (depth > 12) return;
     if (Array.isArray(value)) { value.forEach(v => visit(v, depth + 1)); return; }
     const item = record(value);
-    const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
-    if (types.some(t => t === 'Product' || t === 'https://schema.org/Product' || t === 'http://schema.org/Product')) products.push(item);
+    if (hasSchemaType(item['@type'], 'Product')) products.push(item);
     if (item['@graph']) visit(item['@graph'], depth + 1);
     if (item.mainEntity) visit(item.mainEntity, depth + 1);
   }
@@ -80,7 +84,7 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
   if (!name) throw new Error('A loja não disponibilizou dados do produto. Você pode cadastrá-lo manualmente.');
   const offers = Array.isArray(item.offers) ? item.offers : item.offers ? [item.offers] : [];
   const offer = offers.length === 1 ? record(offers[0]) : {};
-  const isAggregate = offer['@type'] === 'AggregateOffer';
+  const isAggregate = hasSchemaType(offer['@type'], 'AggregateOffer');
   const knownPrice = offers.length ? (isAggregate ? null : price(offer.price, offer.priceCurrency)) : price(meta['product:price:amount'], meta['product:price:currency']);
   const product: ImportedProduct = {
     name,
