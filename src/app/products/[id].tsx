@@ -1,3 +1,4 @@
+import { useCatalogRevision } from '@/data/use-catalog-revision';
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Alert, Linking, Modal, ScrollView, Text, View } from 'react-native';
@@ -6,16 +7,17 @@ import { type Product, isHttpUrl, money, priorityLabels } from '@/domain/product
 import { Button, useUI } from '@/components/ui';
 import { ProductImage } from '@/components/product-image';
 export default function ProductDetails() {
+  const catalogRevision=useCatalogRevision();
   const { colors, styles } = useUI();
   const { id } = useLocalSearchParams<{ id: string }>(); const repo = useProducts();
   const [product, setProduct] = useState<Product | null>(null); const [loading, setLoading] = useState(true);
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [confirm, setConfirm] = useState(false); const [retry, setRetry] = useState(0);
   useFocusEffect(useCallback(() => {
-    void retry; let alive = true; setLoading(true); setError('');
+    void catalogRevision; void retry; let alive = true; setLoading(true); setError('');
     if (typeof id !== 'string') { setLoading(false); setProduct(null); return; }
     repo.get(id).then(p => { if (alive) setProduct(p); }).catch(() => { if (alive) setError('Não foi possível carregar o produto.'); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [repo, id, retry]));
+  }, [repo, id, retry,catalogRevision]));
   async function toggleStatus() {
     if (!product || busy) return;
     setBusy(true); setError('');

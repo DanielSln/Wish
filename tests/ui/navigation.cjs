@@ -44,6 +44,11 @@ const assert = require('node:assert/strict');
   await page.getByRole('button',{name:'Confirmar exclusão da categoria',exact:true}).click();
   await page.getByRole('button',{name:'Ver produtos de Vazia',exact:true}).waitFor({state:'hidden'});
   await tab('Configurações').click();
+  if(process.env.WISH_EXPECT_UNCONFIGURED==='1'){
+    await page.getByRole('button',{name:'Ativar backup',exact:true}).click();
+    await page.getByText(/O backup ainda não foi configurado neste build/).waitFor();
+    assert.equal(await page.getByLabel('E-mail para backup').count(),0);
+  }
   await page.getByRole('button',{name:'Escuro',exact:true}).click();
   await page.reload();
   await page.getByRole('button',{name:'Escuro',exact:true}).waitFor();

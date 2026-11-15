@@ -1,3 +1,4 @@
+import { useCatalogRevision } from '@/data/use-catalog-revision';
 import { useCallback, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -7,15 +8,16 @@ import type { Category } from '@/domain/product';
 import { Button, useUI } from '@/components/ui';
 import { Brand, Icon } from '@/components/brand';
 export default function Categories() {
+  const catalogRevision=useCatalogRevision();
   const repo=useProducts();const {colors:c,styles:s}=useUI();
   const [categories,setCategories]=useState<Category[]>([]);const [counts,setCounts]=useState<Record<string,number>>({});
   const [name,setName]=useState('');const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);const [reload,setReload]=useState(0);
   const [target,setTarget]=useState<Category|null>(null);const [action,setAction]=useState<'rename'|'delete'>('rename');const [renamed,setRenamed]=useState('');
   useFocusEffect(useCallback(()=>{
-    void reload; let alive=true;setLoading(true);setError('');
+    void catalogRevision; void reload; let alive=true;setLoading(true);setError('');
     Promise.all([repo.categories(),repo.list()]).then(([cats,items])=>{if(alive){setCategories(cats);setCounts(items.reduce<Record<string,number>>((all,p)=>({...all,[p.category_id]:(all[p.category_id]??0)+1}),{}))}}).catch(()=>{if(alive)setError('Não foi possível carregar as categorias.')}).finally(()=>{if(alive)setLoading(false)});
     return()=>{alive=false};
-  },[repo,reload]));
+  },[repo,reload,catalogRevision]));
   async function create() {
     if(busy)return;setBusy(true);setError('');
     try {await repo.addCategory(name);setName('');setReload(v=>v+1)}catch(e){setError(e instanceof Error?e.message:'Não foi possível criar a categoria.')}finally{setBusy(false)}

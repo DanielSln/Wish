@@ -13,7 +13,7 @@ export const defaultCategories = [
 export async function migrate(db: Database) {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
   const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  if ((version?.user_version ?? 0) > 2) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
+  if ((version?.user_version ?? 0) > 3) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
   if ((version?.user_version ?? 0) === 0) {
     // Runs before screens mount, so no other query can join this transaction.
     await db.withTransactionAsync(async () => {
@@ -44,6 +44,36 @@ export async function migrate(db: Database) {
   if ((version?.user_version ?? 0) < 2) {
     await db.withTransactionAsync(async () => {
       await db.execAsync('CREATE TABLE app_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL); PRAGMA user_version = 2;');
+    });
+  }
+  if ((version?.user_version ?? 0) < 3) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        CREATE TABLE sync_state (
+          id INTEGER PRIMARY KEY CHECK(id=1), owner_id TEXT, backend TEXT,
+          enabled INTEGER NOT NULL DEFAULT 0, cursor INTEGER NOT NULL DEFAULT 0,
+          upper_cursor INTEGER, last_success TEXT, retry_count INTEGER NOT NULL DEFAULT 0,
+          retry_at INTEGER NOT NULL DEFAULT 0, last_error TEXT, initial_complete INTEGER NOT NULL DEFAULT 0
+        );
+        INSERT INTO sync_state(id) VALUES (1);
+        CREATE TABLE sync_versions (kind TEXT NOT NULL, entity_id TEXT NOT NULL, server_version INTEGER NOT NULL DEFAULT 0, local_revision INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(kind,entity_id));
+        CREATE TABLE sync_outbox (
+          seq INTEGER PRIMARY KEY AUTOINCREMENT, op_id TEXT NOT NULL UNIQUE,
+          kind TEXT NOT NULL CHECK(kind IN ('category','product')), entity_id TEXT NOT NULL,
+          payload TEXT NOT NULL, local_revision INTEGER NOT NULL, base_version INTEGER,
+          attempted INTEGER NOT NULL DEFAULT 0, priority INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX sync_outbox_entity ON sync_outbox(kind,entity_id,seq);
+        CREATE TABLE sync_inbox (seq INTEGER PRIMARY KEY, payload TEXT NOT NULL);
+        CREATE TABLE sync_conflicts (
+          id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL, entity_id TEXT NOT NULL,
+          related_id TEXT, local_payload TEXT, remote_payload TEXT NOT NULL,
+          type TEXT NOT NULL, created_at TEXT NOT NULL, resolved_at TEXT
+        );
+        CREATE UNIQUE INDEX sync_conflicts_open ON sync_conflicts(kind,entity_id) WHERE resolved_at IS NULL;
+        CREATE TABLE sync_archive (id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL, entity_id TEXT NOT NULL, payload TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL);
+        PRAGMA user_version = 3;
+      `);
     });
   }
 }

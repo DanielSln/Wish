@@ -1,10 +1,12 @@
 import type { Database } from './migrations.ts';
+import { localStore } from './store.ts';
+import { enqueue } from '../sync/journal.ts';
 import { validateProduct } from '../domain/product.ts';
 import type { Category, Filters, Product, ProductInput, PurchaseStatus } from '../domain/product.ts';
 
 const fields = ['name','description','category_id','priority','image_url','price_cents','desired_price_cents','store','original_url','notes','status'] as const;
 export function createRepository(db: Database, uuid: () => string, now = () => new Date().toISOString()) {
-  return {
+  const operations = {
     categories: () => db.getAllAsync<Category>('SELECT id,name FROM categories WHERE deleted_at IS NULL ORDER BY name COLLATE NOCASE'),
     async addCategory(name: string) {
       const trimmed = name.trim();
@@ -67,7 +69,19 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
       return id;
     },
     setStatus: (id: string, status: PurchaseStatus) => db.runAsync('UPDATE products SET status=?,updated_at=? WHERE id=? AND deleted_at IS NULL', status, now(), id),
-    // Tombstones preserve deletions for a future sync adapter. No sync or user data leaves the device.
+    // Tombstones preserve deletions; the wrapper journals them atomically when backup is associated.
     remove: (id: string) => { const date = now(); return db.runAsync('UPDATE products SET deleted_at=?,updated_at=? WHERE id=? AND deleted_at IS NULL', date, date, id); },
+  };
+  const store = localStore(db);
+  return {
+    categories: () => store.read(() => operations.categories()),
+    list: (filters: Filters = {}) => store.read(() => operations.list(filters)),
+    get: (id: string) => store.read(() => operations.get(id)),
+    addCategory: (name: string) => store.write(async tx => { const id = await operations.addCategory(name); await enqueue(tx, 'category', id, uuid); return id; }, 'catalog'),
+    renameCategory: (id: string, name: string) => store.write(async tx => { await operations.renameCategory(id, name); await enqueue(tx, 'category', id, uuid); }, 'catalog'),
+    removeCategory: (id: string) => store.write(async tx => { await operations.removeCategory(id); await enqueue(tx, 'category', id, uuid, 10); }, 'catalog'),
+    save: (input: ProductInput, id?: string) => store.write(async tx => { const saved = await operations.save(input, id); await enqueue(tx, 'product', saved, uuid); return saved; }, 'catalog'),
+    setStatus: (id: string, status: PurchaseStatus) => store.write(async tx => { const result = await operations.setStatus(id, status); await enqueue(tx, 'product', id, uuid); return result; }, 'catalog'),
+    remove: (id: string) => store.write(async tx => { const result = await operations.remove(id); await enqueue(tx, 'product', id, uuid); return result; }, 'catalog'),
   };
 }

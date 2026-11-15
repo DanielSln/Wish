@@ -1,9 +1,9 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SQLiteProvider } from 'expo-sqlite';
+import { AuthProvider } from '@/auth/provider';
+import { CatalogProvider } from '@/data/catalog-provider';
 import { Component, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { migrate } from '@/data/migrations';
 import { Button, useUI } from '@/components/ui';
 import { AppearanceProvider, useAppearance } from '@/theme/provider';
 function DatabaseError({ retry }: { retry: () => void }) {
@@ -27,5 +27,5 @@ function Navigation() {
   </Stack></ThemeProvider>;
 }
 export default function RootLayout() {
-  return <DatabaseBoundary><SQLiteProvider databaseName="wish.db" onInit={migrate}><AppearanceProvider><Navigation /></AppearanceProvider></SQLiteProvider></DatabaseBoundary>;
+  return <DatabaseBoundary><AuthProvider><CatalogProvider><AppearanceProvider><Navigation /></AppearanceProvider></CatalogProvider></AuthProvider></DatabaseBoundary>;
 }
