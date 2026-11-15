@@ -57,3 +57,7 @@ service-account*.json
 *.sqlite
 *.sqlite3
 dist-android/
+
+# Installable build artifacts (distribute outside Git)
+*.apk
+*.aab

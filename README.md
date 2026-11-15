@@ -53,7 +53,7 @@ Consultas têm cancelamento e limite de tempo de 12 segundos. O transporte expo/
 
 Consultas automáticas são restritas aos hosts exatos de Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia definidos em src/services/import-policy.ts; imagens extraídas usam apenas CDNs explícitos. Links encurtados, redirects e outras lojas usam cadastro manual. A restrição reduz acesso a destinos arbitrários, mas não equivale a isolamento completo de DNS/IP. Veja [docs/PHASE-3-INTEGRATION.md](docs/PHASE-3-INTEGRATION.md) para os controles, riscos residuais e validação atual, e [docs/PHASE-2-INTEGRATION.md](docs/PHASE-2-INTEGRATION.md) para a revisão da base.
 
-Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. A Fase 2 do [PR #1](https://github.com/DanielSln/Wish/pull/1) foi integrada à main no commit 0c36cbaff599ba4f5c826877f011f4ab54321133, mediante autorização do proprietário. Esta branch foi sincronizada com essa main preservando os commits. A Fase 3 do [PR #2](https://github.com/DanielSln/Wish/pull/2) também foi integrada à main mediante autorização, no commit 278bb1180afd34b9c6de428bcb2623b2f1b37078. A reformulação visual está em uma branch e PR próprios, ainda sem integração.
+Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. A Fase 2 do [PR #1](https://github.com/DanielSln/Wish/pull/1) foi integrada à main no commit 0c36cbaff599ba4f5c826877f011f4ab54321133, mediante autorização do proprietário. Esta branch foi sincronizada com essa main preservando os commits. A Fase 3 do [PR #2](https://github.com/DanielSln/Wish/pull/2) também foi integrada à main mediante autorização, no commit 278bb1180afd34b9c6de428bcb2623b2f1b37078. A reformulação visual do PR #3 foi integrada à main no commit d615495c1b4c403432a58f984f68045477123f7c após autorização e validação final.
 
 Revisão das fases e pendências: [docs/PHASE-2-3-REVIEW.md](docs/PHASE-2-3-REVIEW.md). Auditoria atual por dependência: [docs/SECURITY-REVIEW-2026-11-15.md](docs/SECURITY-REVIEW-2026-11-15.md). Plano técnico da Fase 4, ainda não implementada: [docs/PHASE-4-PLAN.md](docs/PHASE-4-PLAN.md).
 
@@ -77,8 +77,14 @@ Auditoria de segurança: veja docs/SECURITY-AUDIT.md. Permanecem oito alertas mo
 
 Arquivos .env, credenciais, bancos SQLite, node_modules e exportações são ignorados pelo Git.
 
-## Nova identidade e navegação (proposta em revisão)
+## Nova identidade e navegação
 
-A branch feature/visual-refresh parte da main após o merge da Fase 3 (PR #2, 278bb11). A proposta usa a paleta azul confirmada, símbolo W próprio, ícones expo-symbols e temas claro/escuro/automático persistidos. As abas são Início, Categorias, Adicionar, Comprados e Configurações. A gestão de categorias protege vínculos existentes; Comprados usa o mesmo catálogo. A entrada por nome inicia cadastro manual, sem sugestões fictícias. Banco v2 adiciona somente preferências de aparência, preservando os dados v1. O plano de sincronização futura passa a prever migração v2→v3.
+A identidade visual foi integrada pelo PR #3 (d615495), após a Fase 3. O aplicativo usa a paleta azul confirmada, símbolo W próprio, ícones expo-symbols e temas claro/escuro/automático persistidos. As abas são Início, Categorias, Adicionar, Comprados e Configurações. A gestão de categorias protege vínculos existentes; Comprados usa o mesmo catálogo. A entrada por nome inicia cadastro manual, sem sugestões fictícias. Banco v2 adiciona somente preferências de aparência, preservando os dados v1. O plano de sincronização futura passa a prever migração v2→v3.
 
 Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRESH.md). Supabase não foi implementado nesta reformulação.
+
+## Testar em Android real
+
+Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
+
+Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
