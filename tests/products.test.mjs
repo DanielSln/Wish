@@ -55,7 +55,7 @@ test('SQLite: migrate, create, edit, categories, search, sorting, status, deleti
     await migrate(db); assert.equal((await repo.list()).length, 2);
     raw.close(); raw = new DatabaseSync(path); db = adapter(raw); await migrate(db); repo = createRepository(db, randomUUID);
     assert.equal((await repo.list()).length, 2); assert.equal((await repo.get(a)).notes, 'Nova anotação'); assert.equal((await repo.categories()).length, 4);
-    raw.exec('PRAGMA user_version = 3'); await assert.rejects(migrate(db), /mais recente/);
+    raw.exec('PRAGMA user_version = 4'); await assert.rejects(migrate(db), /mais recente/);
     assert.equal(raw.prepare('SELECT count(*) AS n FROM products').get().n, 3);
   } finally { raw.close(); rmSync(dir, { recursive: true, force: true }); }
 });
@@ -120,13 +120,13 @@ test('v1 to v2 migration preserves products/categories and rolls back settings f
   try {
     const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
     const id = await repo.save(input((await repo.categories())[0].id));
-    raw.exec('DROP TABLE app_settings; PRAGMA user_version=1');
+    raw.exec('DROP TABLE app_settings; DROP TABLE sync_state; DROP TABLE sync_versions; DROP TABLE sync_outbox; DROP TABLE sync_inbox; DROP TABLE sync_conflicts; DROP TABLE sync_archive; PRAGMA user_version=1');
     const fail = { ...db, execAsync: async sql => { if (sql.includes('CREATE TABLE app_settings')) throw new Error('disk full'); return db.execAsync(sql); } };
     await assert.rejects(migrate(fail), /disk full/);
     assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 1);
     assert.equal((await repo.get(id)).name, 'Notebook');
     await migrate(db); await migrate(db);
-    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 2);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 3);
     assert.equal((await repo.categories()).length, 3);
     raw.prepare("INSERT INTO app_settings(key,value) VALUES ('appearance','dark')").run();
     await migrate(db);
@@ -141,4 +141,22 @@ test('appearance respects explicit choice and follows system without changing pr
   assert.equal(resolveAppearance('dark', 'light'), 'dark');
   assert.equal(palettes.light.accent, '#A9D8F4');
   assert.equal(palettes.light.primary, '#287BB5');
+});
+
+test('v2 to v3 migration preserves IDs, tombstones and appearance and rolls back a failed outbox schema', async () => {
+  const raw = new DatabaseSync(':memory:');
+  try {
+    const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
+    const category = (await repo.categories())[0]; const id = await repo.save(input(category.id)); await repo.remove(id);
+    raw.exec("INSERT INTO app_settings(key,value) VALUES ('appearance','dark'); DROP TABLE sync_state; DROP TABLE sync_versions; DROP TABLE sync_outbox; DROP TABLE sync_inbox; DROP TABLE sync_conflicts; DROP TABLE sync_archive; PRAGMA user_version=2");
+    const failing = {...db, execAsync: async sql => { if(sql.includes('CREATE TABLE sync_state')) throw new Error('migration interrupted'); return db.execAsync(sql); }};
+    await assert.rejects(migrate(failing), /interrupted/);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version,2);
+    assert.equal(raw.prepare("SELECT count(*) AS n FROM sqlite_master WHERE name='sync_state'").get().n,0);
+    await migrate(db);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version,3);
+    const row=raw.prepare('SELECT id,category_id,deleted_at FROM products WHERE id=?').get(id);
+    assert.equal(row.id,id);assert.equal(row.category_id,category.id);assert.ok(row.deleted_at);
+    assert.equal(raw.prepare("SELECT value FROM app_settings WHERE key='appearance'").get().value,'dark');
+  } finally { raw.close(); }
 });

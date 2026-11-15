@@ -44,7 +44,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-transform-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "private": true
