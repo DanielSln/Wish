@@ -1,24 +1,23 @@
 # Wish
 
-Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router. Projeto localizado em D:\Projetos\Wish.
+Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
-## Executar
+## Executar no Android com Expo Go
 
-Requisitos: Node.js 22.13+ (Node 24 recomendado para rodar os testes SQLite) e npm disponíveis no terminal.
+Recomendado: Node.js 24 LTS, npm, Git e Expo Go Android compatível com **SDK 58**. Não precisa de Android Studio, APK próprio ou login no Wish.
 
 ```powershell
-cd D:\Projetos\Wish
+git clone https://github.com/DanielSln/Wish.git
+cd Wish
+git fetch origin
+git switch --track origin/feature/expo-go-readiness
 npm ci
-npm start
+npx expo start --go
 ```
 
-Para o celular Android com Expo Go compatível com SDK 58:
+Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npx expo start --go --tunnel` (sem argumento `ngrok` adicional).
 
-```powershell
-npx expo start --tunnel ngrok --go
-```
-
-Abra o endereço exp:// exibido pelo Expo ou escaneie o QR Code. O link é temporário e só funciona enquanto o computador e o servidor estiverem ligados. O túnel não publica uma versão permanente em uma conta Expo. Sem túnel, use `npm start` com celular e computador na mesma rede. Se houver incompatibilidade de SDK, consulte https://expo.dev/go?device=true&platform=android&sdkVersion=58.
+Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
 Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seguro (localhost ou HTTPS), WebAssembly, SharedArrayBuffer e dos cabeçalhos COOP/COEP configurados em metro.config.js. Em hospedagem, os mesmos cabeçalhos precisam ser enviados pelo servidor. Dados de navegador e celular ficam em bancos separados.
 
@@ -41,11 +40,11 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 `src/components/`: formulário, imagem e elementos visuais compartilhados.
 `src/app/products/`: rotas de cadastro, edição e detalhes.
 
-Banco wish.db, versão 1: produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
+Banco wish.db, esquema v2 (a v2 acrescenta app_settings para aparência; produtos/categorias da v1 são preservados): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
 ## Fase 3 — Importação por link
 
-Na lista, toque em **Importar por link**, cole o endereço HTTPS de um produto e selecione **Buscar informações**. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário permite corrigir nome, descrição, imagem, preço e loja, escolher categoria/prioridade e adicionar anotações. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
+Em **Adicionar**, cole o endereço HTTPS no campo em destaque e toque em **Adicionar por link**. A prévia é consultada automaticamente para lojas habilitadas; **Buscar informações** permite tentar novamente. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário mostra categoria, prioridade e preço opcional; os campos adicionais ficam recolhidos em **Mais detalhes e categorias**, onde você pode revisar descrição, imagem, loja, URL e anotações. Preços com validade vencida, futura ou inválida não são preenchidos. Um valor informado pela página não é garantia de preço atual. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
 
 O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer) e Open Graph disponibilizados no HTML. Não executa scripts da loja nem utiliza proxy, login, contorno de CAPTCHA/bloqueios ou serviços pagos. Imagens relativas são resolvidas em relação à página. Preços precisam de moeda BRL explícita e valor válido; moeda estrangeira, ofertas múltiplas e preços agregados ficam sem valor para revisão manual. Páginas com vários produtos são recusadas para evitar selecionar um produto arbitrariamente.
 

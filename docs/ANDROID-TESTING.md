@@ -2,7 +2,7 @@
 
 Revisão: 15/11/2026. O PR #3 foi integrado à main com autorização, no commit d615495c1b4c403432a58f984f68045477123f7c. O catálogo continua em wish.db, esquema v2, sem Supabase.
 
-A configuração de APK deste guia está na branch chore/android-device-testing, em PR separado. Até esse PR ser integrado, use essa branch para o perfil preview; a main já contém o aplicativo visual completo e pode ser aberta pelo Expo Go.
+Prioridade atual: [Expo Go no Windows/Android](EXPO-GO-TESTING.md). APK independente está adiado. A preparação do PR #4 foi integrada na main em 025429d4b885641be757915c5aff392f4b5ceb94; eas.json e este roteiro foram preservados. A tentativa anterior de APK não gerou artefato instalável. Não existe PR separado de backup local nesta revisão.
 
 ## 1. Caminho mais rápido: Expo Go
 
