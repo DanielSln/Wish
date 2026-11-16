@@ -1,8 +1,8 @@
 import { extractPrices, type PriceEvidence } from './import-prices.ts';
 import type { ProductInput } from '../domain/product.ts';
-import { importHosts, importImageHosts } from './import-policy.ts';
+import { importHosts, importImageHosts, mercadoLivreHosts } from './import-policy.ts';
 
-export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url' | 'notes'>;
+export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url' | 'notes' | 'offer_details'> & { category_hint?: string };
 export type ImportPreview = { product: ImportedProduct; warnings: string[]; prices: PriceEvidence };
 const MAX_HTML = 2_000_000;
 
@@ -99,7 +99,9 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
     image_url: imageUrl(item.image, source) || imageUrl(meta['og:image'], source),
     price_cents: knownPrice,
-    notes: prices.notes,
+    notes: '',
+    offer_details: prices.notes,
+    category_hint: text(item.category, 160),
     store: text(meta['og:site_name'], 160) || new URL(source).hostname.slice(0, 160),
     original_url: source,
   };
@@ -114,7 +116,8 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
 // A streaming, redirect-aware transport is mandatory. UI uses expo/fetch on every platform.
 export type ImportRequest = (url: string, init: RequestInit) => Promise<Response>;
 export async function importProduct(value: string, signal: AbortSignal | undefined, request: ImportRequest): Promise<ImportPreview> {
-  const url = importDestination(value);
+  let url = importDestination(value);
+  const shortLink = new URL(url).hostname === 'meli.la';
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
@@ -122,9 +125,30 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
   const timeout = setTimeout(abort, 12000);
   try {
     if (controller.signal.aborted) throw new Error('Consulta cancelada.');
-    const response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: 'error', headers: { Accept: 'text/html' } });
-    if (response.redirected || (response.status >= 300 && response.status < 400)) {
-      throw new Error('Redirecionamentos não são permitidos. Cole o endereço final do produto ou use o cadastro manual.');
+    const seen = new Set<string>();
+    let response: Response;
+    for (let hop=0;;hop++) {
+      if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+      if (seen.has(url)) throw new Error('O link curto entrou em um ciclo. Use o cadastro manual.');
+      seen.add(url);
+      response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: shortLink ? 'manual' : 'error', headers: { Accept: 'text/html' } });
+      if (response.type === 'opaqueredirect' || response.status === 0) throw new Error('O navegador não permite conferir este redirecionamento. Abra o link no Android ou cadastre manualmente.');
+      if (response.url && importDestination(response.url) !== url) { await response.body?.cancel(); throw new Error('O endereço da resposta mudou sem validação. Use o cadastro manual.'); }
+      const redirect = response.status >= 300 && response.status < 400;
+      if (!redirect) {
+        if (response.redirected) { await response.body?.cancel(); throw new Error('Redirecionamentos não são permitidos. Use o cadastro manual.'); }
+        if (response.ok && shortLink && !mercadoLivreHosts.has(new URL(url).hostname)) { await response.body?.cancel(); throw new Error('O link curto não chegou a uma página confiável do Mercado Livre. Use o cadastro manual.'); }
+        break;
+      }
+      await response.body?.cancel();
+      if (!shortLink) throw new Error('Redirecionamentos não são permitidos. Cole o endereço final do produto ou use o cadastro manual.');
+      if (hop >= 4 || ![301,302,303,307,308].includes(response.status)) throw new Error('O link curto excedeu o limite de redirecionamentos. Use o cadastro manual.');
+      const location = response.headers.get('location');
+      if (!location) throw new Error('A loja não informou o destino do link curto. Use o cadastro manual.');
+      const next = importUrl(new URL(location,url).href);
+      const host = new URL(next).hostname;
+      if (host !== 'meli.la' && !mercadoLivreHosts.has(host)) throw new Error('O link curto aponta para um destino não autorizado. Use o cadastro manual.');
+      url = next;
     }
     if (!response.ok) throw new Error(`A loja recusou ou não encontrou a página (HTTP ${response.status}). Use o cadastro manual.`);
     if (response.url && importDestination(response.url) !== url) throw new Error('O endereço da resposta mudou. Use o link direto ou o cadastro manual.');

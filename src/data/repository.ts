@@ -2,7 +2,7 @@ import type { Database } from './migrations.ts';
 import { validateProduct } from '../domain/product.ts';
 import type { Category, Filters, Product, ProductInput, PurchaseStatus } from '../domain/product.ts';
 
-const fields = ['name','description','category_id','priority','image_url','price_cents','desired_price_cents','store','original_url','notes','status'] as const;
+const fields = ['name','description','category_id','priority','image_url','price_cents','desired_price_cents','store','original_url','notes','personal_notes','offer_details','status'] as const;
 export function createRepository(db: Database, uuid: () => string, now = () => new Date().toISOString()) {
   return {
     categories: () => db.getAllAsync<Category>('SELECT id,name FROM categories WHERE deleted_at IS NULL ORDER BY name COLLATE NOCASE'),
@@ -53,10 +53,10 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
       const category = await db.getFirstAsync<{ id: string }>('SELECT id FROM categories WHERE id=? AND deleted_at IS NULL', input.category_id);
       if (!category) throw new Error('Selecione uma categoria disponível.');
       const date = now();
-      const values = fields.map(key => key === 'name' ? input.name.trim() : input[key]);
+      const previous = id ? await db.getFirstAsync<{id:string;personal_notes:string;offer_details:string}>('SELECT id,personal_notes,offer_details FROM products WHERE id=? AND deleted_at IS NULL',id) : null;
+      const values = fields.map(key => key === 'name' ? input.name.trim() : key === 'personal_notes' || key === 'offer_details' ? input[key] ?? previous?.[key] ?? '' : input[key]);
       if (id) {
-        const exists = await db.getFirstAsync<{ id: string }>('SELECT id FROM products WHERE id=? AND deleted_at IS NULL', id);
-        if (!exists) throw new Error('Produto não encontrado.');
+        if (!previous) throw new Error('Produto não encontrado.');
         const result = await db.runAsync(`UPDATE products SET ${fields.map(key => `${key}=?`).join(',')}, updated_at=? WHERE id=? AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM categories WHERE id=? AND deleted_at IS NULL)`, ...values, date, id, input.category_id) as { changes: number };
         if (!result.changes) throw new Error('O produto ou a categoria não está mais disponível.');
       } else {
@@ -65,6 +65,11 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
         if (!result.changes) throw new Error('Selecione uma categoria disponível.');
       }
       return id;
+    },
+    async savePersonalNotes(id: string, value: string) {
+      if (value.length > 10000) throw new Error('Use até 10.000 caracteres.');
+      const result = await db.runAsync('UPDATE products SET personal_notes=?,updated_at=? WHERE id=? AND deleted_at IS NULL', value, now(), id) as { changes: number };
+      if (!result.changes) throw new Error('Produto não encontrado.');
     },
     setStatus: (id: string, status: PurchaseStatus) => db.runAsync('UPDATE products SET status=?,updated_at=? WHERE id=? AND deleted_at IS NULL', status, now(), id),
     // Tombstones preserve deletions for a future sync adapter. No sync or user data leaves the device.

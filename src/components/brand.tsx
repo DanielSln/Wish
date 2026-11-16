@@ -1,8 +1,9 @@
 import { Text, View, type ColorValue } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { useUI } from './ui';
-export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow';
+export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow' | 'edit';
 const symbols = {
+  edit: { ios: 'pencil', android: 'edit', web: 'edit' },
   home: { ios: 'house', android: 'home', web: 'home' },
   categories: { ios: 'square.grid.2x2', android: 'grid_view', web: 'grid_view' },
   add: { ios: 'plus', android: 'add', web: 'add' },

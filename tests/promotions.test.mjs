@@ -8,7 +8,7 @@ const page=offers=>'<script type="application/ld+json">'+JSON.stringify({'@type'
 const parse=offers=>extractProduct(page(offers),source,now);
 const offer=extra=>({'@type':'Offer',price:100,priceCurrency:'BRL',...extra});
 test('explicit promotional price wins; list-only or MSRP is not imported as current',()=>{
- const r=parse(offer({price:150,priceSpecification:[spec(150,'StrikethroughPrice'),spec(100)]}));assert.equal(r.product.price_cents,10000);assert.equal(r.prices.original_cents,15000);assert.match(r.product.notes,/150/);
+ const r=parse(offer({price:150,priceSpecification:[spec(150,'StrikethroughPrice'),spec(100)]}));assert.equal(r.product.price_cents,10000);assert.equal(r.prices.original_cents,15000);assert.match(r.product.offer_details,/150/);
  for(const type of ['ListPrice','StrikethroughPrice','MSRP'])assert.equal(parse(offer({price:150,priceSpecification:spec(150,type)})).product.price_cents,null);
  const plain=parse(offer({price:undefined,priceSpecification:{'@type':'UnitPriceSpecification',price:100,priceCurrency:'BRL'}}));assert.equal(plain.product.price_cents,10000);
 });
@@ -19,7 +19,7 @@ test('Open Graph explicit sale and original are separate and expiry/currency sti
  assert.equal(extractProduct(page(offer({priceCurrency:'USD'}))+meta,source,now).product.price_cents,null);
 });
 test('coupon final price explicitly declared is shown separately, never subtracted or auto-applied',()=>{
- const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',validThrough:'2026-11-16'})}));assert.equal(r.product.price_cents,10000);assert.equal(r.prices.coupon.code,'PUBLICO15');assert.equal(r.prices.coupon.price_cents,8500);assert.equal(r.prices.coupon.percent,null);assert.match(r.product.notes,/PUBLICO15/);
+ const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',validThrough:'2026-11-16'})}));assert.equal(r.product.price_cents,10000);assert.equal(r.prices.coupon.code,'PUBLICO15');assert.equal(r.prices.coupon.price_cents,8500);assert.equal(r.prices.coupon.percent,null);assert.match(r.product.offer_details,/PUBLICO15/);
  const alreadyConditional=parse(offer({price:85,priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15'})}));assert.equal(alreadyConditional.product.price_cents,null);
 });
 test('minimum spend, membership and payment conditions never become guaranteed final prices',()=>{
