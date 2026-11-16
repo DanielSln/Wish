@@ -91,3 +91,7 @@ Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs
 ### Preços promocionais e cupons
 
 A prévia distingue preço anterior, promoção explícita e opção condicionada ao PIX quando identificáveis. Cupons não são calculados nem aplicados automaticamente: o valor anunciado e as condições são apresentados para revisão. O preço pode ser corrigido manualmente e as referências ficam nas anotações, sem mudança do SQLite. Consulte [formatos suportados, caso KaBuM e validação](docs/PROMOTIONAL-PRICES.md).
+
+### Descrições compactas
+
+Prévia e detalhes mostram até quatro linhas, com Ver mais... / Ver menos somente quando necessário. No cadastro/edição, Editar descrição abre o campo com todo o conteúdo. Descrições e especificações contidas no texto não são cortadas no SQLite. Consulte [comportamento e testes](docs/EXPANDABLE-DESCRIPTIONS.md).

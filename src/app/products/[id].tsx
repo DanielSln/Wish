@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Linking, Modal, ScrollView, Text, View } from
 import { useProducts } from '@/data/use-products';
 import { type Product, isHttpUrl, money, priorityLabels } from '@/domain/product';
 import { Button, useUI } from '@/components/ui';
+import { ExpandableText } from '@/components/expandable-text';
 import { ProductImage } from '@/components/product-image';
 export default function ProductDetails() {
   const { colors, styles } = useUI();
@@ -38,7 +39,7 @@ export default function ProductDetails() {
     <Button title={product.status === 'pending' ? 'Marcar como comprado' : 'Reverter para pendente'} disabled={busy} onPress={toggleStatus} />
     <Button title="Editar produto e anotações" disabled={busy} onPress={() => router.push({ pathname: '/products/edit', params: { id: product.id } })} />
     {!!product.original_url && <Button title="Abrir na loja ↗" disabled={busy} onPress={openStore} />}
-    {rows.map(([label,value]) => <View key={label} style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}><Text style={styles.label}>{label}</Text><Text selectable style={styles.body}>{value || 'Não informado'}</Text></View>)}
+    {rows.map(([label,value]) => <View key={label} style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}><Text style={styles.label}>{label}</Text>{label === 'Descrição' && value ? <ExpandableText text={value} /> : <Text selectable style={styles.body}>{value || 'Não informado'}</Text>}</View>)}
     <Button title="Excluir produto" disabled={busy} onPress={() => setConfirm(true)} variant="danger" /><Button title="Voltar à lista" onPress={() => router.replace('/')} />
     <Modal visible={confirm} transparent animationType="fade" onRequestClose={() => { if (!busy) setConfirm(false); }}><View style={{ flex: 1, backgroundColor: '#000B', justifyContent: 'center', padding: 28 }}><View style={styles.card}><Text style={styles.heading}>Excluir este desejo?</Text><Text style={styles.body}>O produto será removido da sua lista. Essa ação não pode ser desfeita pelo aplicativo.</Text><Button title="Cancelar" disabled={busy} onPress={() => setConfirm(false)} /><Button title={busy ? 'Excluindo…' : 'Confirmar exclusão'} disabled={busy} onPress={remove} variant="danger" /></View></View></Modal>
   </ScrollView>;

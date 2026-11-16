@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { fetch as expoFetch } from 'expo/fetch';
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
 import { ProductForm } from '@/components/product-form';
+import { ExpandableText } from '@/components/expandable-text';
 import { ProductImage } from '@/components/product-image';
 import { Button, useUI } from '@/components/ui';
 import { money, type ProductInput } from '@/domain/product';
@@ -67,7 +68,7 @@ export default function ImportScreen() {
       <Text style={styles.heading}>Preço informado pela página: {money(preview.product.price_cents)}</Text>
       {preview.prices.conditional && <View style={{gap:12}}><Text style={styles.body}>{preview.prices.conditional.label}: {money(preview.prices.conditional.price_cents)}. Depende dessa forma de pagamento.</Text><Button variant="secondary" title="Revisar usando o preço PIX" onPress={() => { const option = preview.prices.conditional!; setInitial({...preview.product,price_cents:option.price_cents,notes:preview.product.notes+'\nPreço escolhido na revisão: '+money(option.price_cents)+' — '+option.label+'. Confira as condições na loja.'}); }}/></View>}
       {preview.prices.coupon && <View style={{gap:8}}><Text style={styles.label}>Cupom anunciado: {preview.prices.coupon.code}</Text>{preview.prices.coupon.percent !== null && <Text style={styles.body}>{preview.prices.coupon.percent}% de desconto anunciado.</Text>}{preview.prices.coupon.amount_cents !== null && <Text style={styles.body}>{money(preview.prices.coupon.amount_cents)} de desconto anunciado.</Text>}{preview.prices.coupon.price_cents !== null && <Text style={styles.body}>Preço anunciado com cupom: {money(preview.prices.coupon.price_cents)} — sujeito às condições.</Text>}<Text style={styles.body}>{preview.prices.coupon.conditions}</Text><Text style={styles.body}>Nenhum cupom foi aplicado. Na revisão, você pode informar manualmente o preço com cupom confirmado por você.</Text></View>}
-      {!!preview.product.description && <Text style={styles.body}>{preview.product.description}</Text>}
+      {!!preview.product.description && <ExpandableText text={preview.product.description} />}
       <Text selectable style={styles.body}>{preview.product.original_url}</Text>
       {preview.warnings.map(warning => <Text key={warning} style={styles.body}>{warning}</Text>)}
       <Button title="Revisar e escolher categoria" onPress={() => setInitial(preview.product)} />

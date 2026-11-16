@@ -4,6 +4,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, Te
 import { useProducts } from '@/data/use-products';
 import { type Category, type ProductInput, type Priority, parsePrice, priorityLabels, validateProduct } from '@/domain/product';
 import { Button, Chip, useUI } from './ui';
+import { DescriptionField } from './description-field';
 import { ProductImage } from './product-image';
 const empty: ProductInput = { name: '', description: '', category_id: '', priority: 'medium', image_url: '', price_cents: null, desired_price_cents: null, store: '', original_url: '', notes: '', status: 'pending' };
 export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: Partial<ProductInput>; onSaved?: () => void }) {
@@ -72,7 +73,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     <View><Text style={styles.label}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60} /><Button title="Criar categoria" disabled={busy || !newCategory.trim()} onPress={addCategory} style={{ marginTop: 10 }} /></View>
     {field('original_url','Link do produto (opcional)')}{field('image_url','URL da imagem (opcional)')}
     <View><Text style={styles.label}>Preço desejado (R$)</Text><TextInput accessibilityLabel="Preço desejado" editable={!busy} style={styles.input} keyboardType="decimal-pad" value={desiredPrice} onChangeText={setDesiredPrice} placeholder="999,90" placeholderTextColor={colors.muted} />{!!errors.desired_price_cents && <Text style={styles.error}>{errors.desired_price_cents}</Text>}</View>
-    {field('store','Loja')}{field('description','Descrição',true)}{field('notes','Anotações pessoais',true)}
+    {field('store','Loja')}<DescriptionField value={input.description} onChange={description => setInput(value => ({...value,description}))} editable={!busy} error={errors.description} />{field('notes','Anotações pessoais',true)}
     </View>}
     <Button title={busy ? 'Salvando…' : 'Salvar desejo'} disabled={busy} onPress={save} />
   </ScrollView></KeyboardAvoidingView>;
