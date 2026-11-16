@@ -4,7 +4,7 @@
     "slug": "wish",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/brand/icon.png",
+    "icon": "./assets/brand/adaptive-foreground.png",
     "scheme": "wish",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -38,12 +38,13 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#F7FAFC",
-          "image": "./assets/brand/splash.png",
-          "imageWidth": 76,
+          "image": "./assets/brand/adaptive-foreground.png",
+          "imageWidth": 128,
           "dark": {
             "backgroundColor": "#101A23",
-            "image": "./assets/brand/splash.png"
-          }
+            "image": "./assets/brand/monochrome.png"
+          },
+          "resizeMode": "contain"
         }
       ],
       "expo-sqlite"

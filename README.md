@@ -99,3 +99,7 @@ Prévia e detalhes mostram até quatro linhas, com Ver mais... / Ver menos somen
 ### Detalhes simples e importação assistida
 
 Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm editor com salvar/cancelar, ofertas ficam separadas e textos anteriores são preservados sem classificação automática. meli.la aceita resolução restrita ao Mercado Livre; bloqueios continuam com alternativa manual. Categorias são sugeridas por regras locais, respeitando a escolha manual. Consulte [migração, segurança e testes](docs/SMART-DETAILS-IMPORT.md).
+
+### Cadastro em outras lojas e carregamento
+
+Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas podem seguir com **Continuar cadastro**, mantendo URL/domínio e preenchimento manual; a ausência de prévia não bloqueia salvar. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
