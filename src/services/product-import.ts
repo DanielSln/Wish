@@ -13,7 +13,7 @@ export function importUrl(value: string): string {
   // A trailing DNS root dot must not bypass local-host checks.
   const host = url.hostname.toLowerCase().replace(/\.$/, '');
   if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') ||
-      !host.includes('.') || host.endsWith('.local') || host.endsWith('.localhost') ||
+      !host.includes('.') || ['.local','.localhost','.internal','.lan','.home'].some(suffix => host.endsWith(suffix)) || host === 'localhost.localdomain' ||
       host.includes(':') || /^[\d.]+$/.test(host)) {
     throw new Error('Use um link HTTPS público da loja, sem credenciais ou endereço de rede local.');
   }
@@ -21,6 +21,19 @@ export function importUrl(value: string): string {
   url.hash = '';
   url.hostname = host;
   return url.href;
+}
+
+export function linkImportPlan(value: string) {
+  const url = importUrl(value); const host = new URL(url).hostname;
+  return { url, host, automatic: importHosts.has(host) };
+}
+export function manualProductFromLink(value: string): Partial<ProductInput> {
+  const plan = linkImportPlan(value);
+  return { original_url: plan.url, store: plan.host };
+}
+export class ProductMetadataUnavailable extends Error {
+  readonly code = 'METADATA_UNAVAILABLE';
+  constructor() { super('A página respondeu, mas não disponibilizou informações do produto nesta consulta. Você pode preencher manualmente; seu link será mantido.'); }
 }
 
 export function importDestination(value: string): string {
@@ -79,25 +92,29 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
     if (Array.isArray(value)) { value.forEach(v => visit(v, depth + 1)); return; }
     const item = record(value);
     if (hasSchemaType(item['@type'], 'Product')) products.push(item);
+    if (hasSchemaType(item['@type'], 'ProductGroup') && item.hasVariant) visit(item.hasVariant, depth + 1);
     if (item['@graph']) visit(item['@graph'], depth + 1);
     if (item.mainEntity) visit(item.mainEntity, depth + 1);
   }
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     const attrs = attributes(match[1]);
     if (attrs.id === '__NEXT_DATA__' && attrs.type?.toLowerCase() === 'application/json') { try { nextData = JSON.parse(match[2]); } catch { /* Optional public store metadata. */ } }
-    if (attrs.type?.toLowerCase() !== 'application/ld+json') continue;
+    if (!/^application\/ld\+json(?:\s*;|\s*$)/i.test(attrs.type ?? '')) continue;
     try { visit(JSON.parse(match[2])); } catch { /* Malformed metadata is optional. */ }
   }
   if (products.length > 1) throw new Error('A página contém vários produtos. Abra o link de um único produto ou cadastre manualmente.');
   const item = products[0] ?? {};
   const name = text(item.name, 160) || text(meta['og:title'], 160);
-  if (!name) throw new Error('A loja não disponibilizou dados do produto. Você pode cadastrá-lo manualmente.');
+  if (!name && !products.length) throw new ProductMetadataUnavailable();
+  if (!products.length && (new URL(source).pathname === '/' || meta['og:type']?.toLowerCase() === 'website')) throw new ProductMetadataUnavailable();
   const prices = extractPrices(item, meta, source, now, nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
   const knownPrice = prices.current_cents;
+  const image = imageUrl(item.image, source) || imageUrl(meta['og:image'], source);
+  if (!name && !image && knownPrice === null) throw new ProductMetadataUnavailable();
   const product: ImportedProduct = {
     name,
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
-    image_url: imageUrl(item.image, source) || imageUrl(meta['og:image'], source),
+    image_url: image,
     price_cents: knownPrice,
     notes: '',
     offer_details: prices.notes,
@@ -108,6 +125,7 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
   return { product, prices, warnings: [
     'Confira os dados na loja antes de salvar. O preço pode variar por vendedor, variante, frete ou promoção.',
     ...prices.warnings,
+    ...(!name ? ['O nome não foi informado pela página. Preencha-o na revisão.'] : []),
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
     ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
   ] };
@@ -150,7 +168,7 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
       if (host !== 'meli.la' && !mercadoLivreHosts.has(host)) throw new Error('O link curto aponta para um destino não autorizado. Use o cadastro manual.');
       url = next;
     }
-    if (!response.ok) throw new Error(`A loja recusou ou não encontrou a página (HTTP ${response.status}). Use o cadastro manual.`);
+    if (!response.ok) throw new Error(`Não foi possível consultar a página agora (HTTP ${response.status}). Você pode abrir a loja ou cadastrar manualmente com o link preservado.`);
     if (response.url && importDestination(response.url) !== url) throw new Error('O endereço da resposta mudou. Use o link direto ou o cadastro manual.');
     const contentType = response.headers.get('content-type') ?? '';
     if (!/^(text\/html|application\/xhtml\+xml)(?:\s*;|\s*$)/i.test(contentType)) throw new Error('Este link não retornou uma página de produto HTML.');
