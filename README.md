@@ -95,3 +95,7 @@ A prévia distingue preço anterior, promoção explícita e opção condicionad
 ### Descrições compactas
 
 Prévia e detalhes mostram até quatro linhas, com Ver mais... / Ver menos somente quando necessário. No cadastro/edição, Editar descrição abre o campo com todo o conteúdo. Descrições e especificações contidas no texto não são cortadas no SQLite. Consulte [comportamento e testes](docs/EXPANDABLE-DESCRIPTIONS.md).
+
+### Detalhes simples e importação assistida
+
+Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm editor com salvar/cancelar, ofertas ficam separadas e textos anteriores são preservados sem classificação automática. meli.la aceita resolução restrita ao Mercado Livre; bloqueios continuam com alternativa manual. Categorias são sugeridas por regras locais, respeitando a escolha manual. Consulte [migração, segurança e testes](docs/SMART-DETAILS-IMPORT.md).

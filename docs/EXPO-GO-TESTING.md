@@ -7,7 +7,7 @@ Revisão: 15/11/2026. Prioridade atual: Expo Go gratuito; APK independente e Sup
 - `main`: `025429d4b885641be757915c5aff392f4b5ceb94`, com as Fases 1–3, identidade azul e preparação Android (PRs #1–#4 integrados).
 - [PR #5](https://github.com/DanielSln/Wish/pull/5), `feature/supabase-backup`, permanece aberto e preservado, sem alterações ou integração nesta tarefa. Não use essa branch para este roteiro. O Wish desta entrega não exige conta nem configuração Supabase.
 - A branch `chore/android-device-testing`, `eas.json` e [o guia de APK](ANDROID-TESTING.md) foram preservados. A tentativa anterior de build não gerou APK por falta de espaço; não há APK novo nesta entrega. Não foi encontrada branch ou PR adicional de backup local. Não existe backup local exportável implementado aqui.
-- Esta entrega está em `feature/expo-go-readiness`, criada diretamente da main. Não modifica esquema, nome do banco, UUIDs ou migrações: SQLite permanece v2.
+- Esta entrega está em `feature/expo-go-readiness`, criada diretamente da main. A evolução atual inclui migração aditiva SQLite v2→v4 para separar notas e ofertas, preservando textos antigos, nome do banco e UUIDs; veja SMART-DETAILS-IMPORT.md.
 
 ## Requisitos
 
@@ -51,7 +51,7 @@ Não execute os dois blocos ao mesmo tempo. O comando usa a CLI local do projeto
 
 ## Se já tem uma cópia do Wish
 
-Se você já executou o PR #5 no mesmo armazenamento do Expo Go, ele pode ter migrado o banco para v3. Esta branch usa v2 e recusa versões futuras **sem apagar o banco**. Nesse caso, não limpe dados nem reinstale para contornar: volte à branch que criou o banco e planeje uma transferência explícita em tarefa separada. Não há downgrade automático. Essa limitação não afeta a atualização normal da main v2 para esta branch v2.
+Se você já executou o PR #5 no mesmo armazenamento do Expo Go, ele pode ter migrado o banco para v3. Esta branch usa v4 e recusa o esquema experimental v3 **sem apagar o banco**. Nesse caso, não limpe dados nem reinstale para contornar: volte à branch que criou o banco e planeje uma transferência explícita em tarefa separada. Não há downgrade automático. Essa limitação não afeta a atualização normal da main v2 para esta branch v4.
 
 Entre na pasta existente e confira alterações antes de trocar de branch. Não clone por cima nem apague arquivos:
 
@@ -126,7 +126,7 @@ Expo Go é um cliente de desenvolvimento. Não garante iniciar o projeto do zero
 
 ## Limites e preservação dos dados
 
-O banco continua wish.db/v2, sem migração nesta entrega. Cada sandbox (navegador, projeto no Expo Go, APK próprio) tem dados separados. Trocar host/origem de desenvolvimento ou reinstalar/trocar o cliente pode afetar o acesso ao armazenamento do projeto. Mantenha a mesma pasta/slug/configuração e reabra o mesmo projeto; não desinstale Expo Go, limpe seus dados ou mude de SDK para testar persistência. Não há exportação/restauração automática entre essas sandboxes, nem backup em nuvem nesta branch. Evite usar o ambiente de desenvolvimento como única cópia de dados insubstituíveis.
+O banco continua wish.db, agora v4 com migração aditiva. Os campos e textos anteriores não são apagados. Cada sandbox (navegador, projeto no Expo Go, APK próprio) tem dados separados. Trocar host/origem de desenvolvimento ou reinstalar/trocar o cliente pode afetar o acesso ao armazenamento do projeto. Mantenha a mesma pasta/slug/configuração e reabra o mesmo projeto; não desinstale Expo Go, limpe seus dados ou mude de SDK para testar persistência. Não há exportação/restauração automática entre essas sandboxes, nem backup em nuvem nesta branch. Evite usar o ambiente de desenvolvimento como única cópia de dados insubstituíveis.
 
 Ícone próprio, splash e configurações nativas de um APK podem aparecer diferentes no Expo Go; não são critérios para validar o APK adiado. Para uso independente de Metro no futuro, retomar o perfil APK preservado em uma tarefa separada. Supabase permanece no PR #5 para revisão futura.
 
