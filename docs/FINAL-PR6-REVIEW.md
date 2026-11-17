@@ -1,5 +1,7 @@
 # Revisão final do PR #6 — 16/11/2026
 
+> Encerramento posterior: o proprietário aprovou fisicamente a imagem Youcom. O preço vazio foi investigado e aceito como limitação não bloqueadora, assim como o carregamento do Expo Go. A recomendação final e os checks atuais estão em [PR6-MERGE-READINESS.md](PR6-MERGE-READINESS.md); as condições de aprovação abaixo registram a revisão anterior.
+
 Branch: feature/expo-go-readiness. Base inspecionada: main 025429d. PR #5 (Supabase, esquema v3) preservado e fora do escopo. Não há login, sincronização ou merge automático nesta revisão.
 
 ## Incidente SQLite e preservação
