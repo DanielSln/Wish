@@ -1,24 +1,23 @@
 # Wish
 
-Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router. Projeto localizado em D:\Projetos\Wish.
+Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
-## Executar
+## Executar no Android com Expo Go
 
-Requisitos: Node.js 22.13+ (Node 24 recomendado para rodar os testes SQLite) e npm disponíveis no terminal.
+Recomendado: Node.js 24 LTS, npm, Git e Expo Go Android compatível com **SDK 58**. Não precisa de Android Studio, APK próprio ou login no Wish.
 
 ```powershell
-cd D:\Projetos\Wish
+git clone https://github.com/DanielSln/Wish.git
+cd Wish
+git fetch origin
+git switch --track origin/feature/expo-go-readiness
 npm ci
-npm start
+npm start -- --go
 ```
 
-Para o celular Android com Expo Go compatível com SDK 58:
+Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
-```powershell
-npx expo start --tunnel ngrok --go
-```
-
-Abra o endereço exp:// exibido pelo Expo ou escaneie o QR Code. O link é temporário e só funciona enquanto o computador e o servidor estiverem ligados. O túnel não publica uma versão permanente em uma conta Expo. Sem túnel, use `npm start` com celular e computador na mesma rede. Se houver incompatibilidade de SDK, consulte https://expo.dev/go?device=true&platform=android&sdkVersion=58.
+Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
 Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seguro (localhost ou HTTPS), WebAssembly, SharedArrayBuffer e dos cabeçalhos COOP/COEP configurados em metro.config.js. Em hospedagem, os mesmos cabeçalhos precisam ser enviados pelo servidor. Dados de navegador e celular ficam em bancos separados.
 
@@ -41,11 +40,11 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 `src/components/`: formulário, imagem e elementos visuais compartilhados.
 `src/app/products/`: rotas de cadastro, edição e detalhes.
 
-Banco wish.db, versão 1: produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
+Banco wish.db, esquema v4 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
 ## Fase 3 — Importação por link
 
-Na lista, toque em **Importar por link**, cole o endereço HTTPS de um produto e selecione **Buscar informações**. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário permite corrigir nome, descrição, imagem, preço e loja, escolher categoria/prioridade e adicionar anotações. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
+Em **Adicionar**, cole o endereço HTTPS no campo em destaque e toque em **Adicionar por link**. A prévia é consultada automaticamente para lojas habilitadas; **Buscar informações** permite tentar novamente. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário mostra categoria, prioridade e preço opcional; os campos adicionais ficam recolhidos em **Mais detalhes e categorias**, onde você pode revisar descrição, imagem, loja, URL e anotações. Preços com validade vencida, futura ou inválida não são preenchidos. Um valor informado pela página não é garantia de preço atual. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
 
 O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer) e Open Graph disponibilizados no HTML. Não executa scripts da loja nem utiliza proxy, login, contorno de CAPTCHA/bloqueios ou serviços pagos. Imagens relativas são resolvidas em relação à página. Preços precisam de moeda BRL explícita e valor válido; moeda estrangeira, ofertas múltiplas e preços agregados ficam sem valor para revisão manual. Páginas com vários produtos são recusadas para evitar selecionar um produto arbitrariamente.
 
@@ -88,3 +87,19 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
+
+### Preços promocionais e cupons
+
+A prévia distingue preço anterior, promoção explícita e opção condicionada ao PIX quando identificáveis. Cupons não são calculados nem aplicados automaticamente: o valor anunciado e as condições são apresentados para revisão. O preço pode ser corrigido manualmente e as referências ficam nas anotações, sem mudança do SQLite. Consulte [formatos suportados, caso KaBuM e validação](docs/PROMOTIONAL-PRICES.md).
+
+### Descrições compactas
+
+Prévia e detalhes mostram até quatro linhas, com Ver mais... / Ver menos somente quando necessário. No cadastro/edição, Editar descrição abre o campo com todo o conteúdo. Descrições e especificações contidas no texto não são cortadas no SQLite. Consulte [comportamento e testes](docs/EXPANDABLE-DESCRIPTIONS.md).
+
+### Detalhes simples e importação assistida
+
+Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm editor com salvar/cancelar, ofertas ficam separadas e textos anteriores são preservados sem classificação automática. meli.la aceita resolução restrita ao Mercado Livre; bloqueios continuam com alternativa manual. Categorias são sugeridas por regras locais, respeitando a escolha manual. Consulte [migração, segurança e testes](docs/SMART-DETAILS-IMPORT.md).
+
+### Cadastro em outras lojas e carregamento
+
+Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas podem seguir com **Continuar cadastro**, mantendo URL/domínio e preenchimento manual; a ausência de prévia não bloqueia salvar. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).

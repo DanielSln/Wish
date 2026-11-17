@@ -1,9 +1,10 @@
-import { parsePrice } from '../domain/product.ts';
+import { selectProductImage } from './product-images.ts';
+import { extractPrices, type PriceEvidence } from './import-prices.ts';
 import type { ProductInput } from '../domain/product.ts';
-import { importHosts, importImageHosts } from './import-policy.ts';
+import { importHosts, importImageHosts, mercadoLivreHosts, imageHostMatchesStore } from './import-policy.ts';
 
-export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url'>;
-export type ImportPreview = { product: ImportedProduct; warnings: string[] };
+export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url' | 'notes' | 'offer_details'> & { category_hint?: string };
+export type ImportPreview = { product: ImportedProduct; warnings: string[]; prices: PriceEvidence };
 const MAX_HTML = 2_000_000;
 
 // Only public HTTPS links; no credentials, local hosts or nonstandard ports.
@@ -13,7 +14,7 @@ export function importUrl(value: string): string {
   // A trailing DNS root dot must not bypass local-host checks.
   const host = url.hostname.toLowerCase().replace(/\.$/, '');
   if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') ||
-      !host.includes('.') || host.endsWith('.local') || host.endsWith('.localhost') ||
+      !host.includes('.') || ['.local','.localhost','.internal','.lan','.home'].some(suffix => host.endsWith(suffix)) || host === 'localhost.localdomain' ||
       host.includes(':') || /^[\d.]+$/.test(host)) {
     throw new Error('Use um link HTTPS público da loja, sem credenciais ou endereço de rede local.');
   }
@@ -21,6 +22,19 @@ export function importUrl(value: string): string {
   url.hash = '';
   url.hostname = host;
   return url.href;
+}
+
+export function linkImportPlan(value: string) {
+  const url = importUrl(value); const host = new URL(url).hostname;
+  return { url, host, automatic: importHosts.has(host) };
+}
+export function manualProductFromLink(value: string): Partial<ProductInput> {
+  const plan = linkImportPlan(value);
+  return { original_url: plan.url, store: plan.host };
+}
+export class ProductMetadataUnavailable extends Error {
+  readonly code = 'METADATA_UNAVAILABLE';
+  constructor() { super('A página respondeu, mas não disponibilizou informações do produto nesta consulta. Você pode preencher manualmente; seu link será mantido.'); }
 }
 
 export function importDestination(value: string): string {
@@ -53,62 +67,65 @@ function attributes(tag: string) {
   return result;
 }
 function imageUrl(value: unknown, base: string): string {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  const source = typeof candidate === 'string' ? candidate : record(candidate).url;
+  const source = typeof value === 'string' ? value : record(value).url;
   if (typeof source !== 'string' || !source.trim()) return '';
   try {
     const url = importUrl(new URL(source, base).href);
-    return importImageHosts.has(new URL(url).hostname) ? url : '';
+    return importImageHosts.has(new URL(url).hostname) && imageHostMatchesStore(new URL(base).hostname, new URL(url).hostname) ? url : '';
   } catch { return ''; }
 }
-function price(value: unknown, currency: unknown): number | null {
-  // Never infer currency, use an aggregate lowPrice or convert foreign prices.
-  if (currency !== 'BRL' || !['string', 'number'].includes(typeof value)) return null;
-  try { return parsePrice(String(value)); } catch { return null; }
-}
-
-export function extractProduct(html: string, sourceUrl: string): ImportPreview {
+export function extractProduct(html: string, sourceUrl: string, now = Date.now()): ImportPreview {
   const source = importUrl(sourceUrl);
   if (html.length > MAX_HTML) throw new Error('A página é muito grande para importar. Cadastre o produto manualmente.');
-  const meta: Record<string, string> = {};
+  const meta: Record<string, string> = {}; const imageMetas: Record<string,string>[] = [];
   // Scripts/comments cannot masquerade as HTML metadata. JSON-LD is read separately.
   const markup = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
   for (const tag of markup.match(/<meta\b[^>]*>/gi) ?? []) {
-    const attrs = attributes(tag);
+    const attrs = attributes(tag); imageMetas.push(attrs);
     const key = (attrs.property ?? attrs.name ?? '').toLowerCase();
     if (key && !(key in meta)) meta[key] = attrs.content ?? '';
   }
   const products: Record<string, unknown>[] = [];
+  let nextData: unknown = null;
   function visit(value: unknown, depth = 0) {
     if (depth > 12) return;
     if (Array.isArray(value)) { value.forEach(v => visit(v, depth + 1)); return; }
     const item = record(value);
     if (hasSchemaType(item['@type'], 'Product')) products.push(item);
+    if (hasSchemaType(item['@type'], 'ProductGroup') && item.hasVariant) visit(item.hasVariant, depth + 1);
     if (item['@graph']) visit(item['@graph'], depth + 1);
     if (item.mainEntity) visit(item.mainEntity, depth + 1);
   }
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
-    if (attributes(match[1]).type?.toLowerCase() !== 'application/ld+json') continue;
+    const attrs = attributes(match[1]);
+    if (attrs.id === '__NEXT_DATA__' && attrs.type?.toLowerCase() === 'application/json') { try { nextData = JSON.parse(match[2]); } catch { /* Optional public store metadata. */ } }
+    if (!/^application\/ld\+json(?:\s*;|\s*$)/i.test(attrs.type ?? '')) continue;
     try { visit(JSON.parse(match[2])); } catch { /* Malformed metadata is optional. */ }
   }
   if (products.length > 1) throw new Error('A página contém vários produtos. Abra o link de um único produto ou cadastre manualmente.');
   const item = products[0] ?? {};
   const name = text(item.name, 160) || text(meta['og:title'], 160);
-  if (!name) throw new Error('A loja não disponibilizou dados do produto. Você pode cadastrá-lo manualmente.');
-  const offers = Array.isArray(item.offers) ? item.offers : item.offers ? [item.offers] : [];
-  const offer = offers.length === 1 ? record(offers[0]) : {};
-  const isAggregate = hasSchemaType(offer['@type'], 'AggregateOffer');
-  const knownPrice = offers.length ? (isAggregate ? null : price(offer.price, offer.priceCurrency)) : price(meta['product:price:amount'], meta['product:price:currency']);
+  if (!name && !products.length) throw new ProductMetadataUnavailable();
+  if (!products.length && (new URL(source).pathname === '/' || meta['og:type']?.toLowerCase() === 'website')) throw new ProductMetadataUnavailable();
+  const prices = extractPrices(item, meta, source, now, nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
+  const knownPrice = prices.current_cents;
+  const image = selectProductImage(item.image, imageMetas, (markup.match(/<img\b[^>]*>/gi) ?? []).map(attributes), source, name, value => imageUrl(value, source));
+  if (!name && !image && knownPrice === null) throw new ProductMetadataUnavailable();
   const product: ImportedProduct = {
     name,
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
-    image_url: imageUrl(item.image, source) || imageUrl(meta['og:image'], source),
+    image_url: image,
     price_cents: knownPrice,
+    notes: '',
+    offer_details: prices.notes,
+    category_hint: text(item.category, 160),
     store: text(meta['og:site_name'], 160) || new URL(source).hostname.slice(0, 160),
     original_url: source,
   };
-  return { product, warnings: [
+  return { product, prices, warnings: [
     'Confira os dados na loja antes de salvar. O preço pode variar por vendedor, variante, frete ou promoção.',
+    ...prices.warnings,
+    ...(!name ? ['O nome não foi informado pela página. Preencha-o na revisão.'] : []),
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
     ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
   ] };
@@ -117,7 +134,8 @@ export function extractProduct(html: string, sourceUrl: string): ImportPreview {
 // A streaming, redirect-aware transport is mandatory. UI uses expo/fetch on every platform.
 export type ImportRequest = (url: string, init: RequestInit) => Promise<Response>;
 export async function importProduct(value: string, signal: AbortSignal | undefined, request: ImportRequest): Promise<ImportPreview> {
-  const url = importDestination(value);
+  let url = importDestination(value);
+  const shortLink = new URL(url).hostname === 'meli.la';
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
@@ -125,11 +143,32 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
   const timeout = setTimeout(abort, 12000);
   try {
     if (controller.signal.aborted) throw new Error('Consulta cancelada.');
-    const response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: 'error', headers: { Accept: 'text/html' } });
-    if (response.redirected || (response.status >= 300 && response.status < 400)) {
-      throw new Error('Redirecionamentos não são permitidos. Cole o endereço final do produto ou use o cadastro manual.');
+    const seen = new Set<string>();
+    let response: Response;
+    for (let hop=0;;hop++) {
+      if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+      if (seen.has(url)) throw new Error('O link curto entrou em um ciclo. Use o cadastro manual.');
+      seen.add(url);
+      response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: shortLink ? 'manual' : 'error', headers: { Accept: 'text/html' } });
+      if (response.type === 'opaqueredirect' || response.status === 0) throw new Error('O navegador não permite conferir este redirecionamento. Abra o link no Android ou cadastre manualmente.');
+      if (response.url && importDestination(response.url) !== url) { await response.body?.cancel(); throw new Error('O endereço da resposta mudou sem validação. Use o cadastro manual.'); }
+      const redirect = response.status >= 300 && response.status < 400;
+      if (!redirect) {
+        if (response.redirected) { await response.body?.cancel(); throw new Error('Redirecionamentos não são permitidos. Use o cadastro manual.'); }
+        if (response.ok && shortLink && !mercadoLivreHosts.has(new URL(url).hostname)) { await response.body?.cancel(); throw new Error('O link curto não chegou a uma página confiável do Mercado Livre. Use o cadastro manual.'); }
+        break;
+      }
+      await response.body?.cancel();
+      if (!shortLink) throw new Error('Redirecionamentos não são permitidos. Cole o endereço final do produto ou use o cadastro manual.');
+      if (hop >= 4 || ![301,302,303,307,308].includes(response.status)) throw new Error('O link curto excedeu o limite de redirecionamentos. Use o cadastro manual.');
+      const location = response.headers.get('location');
+      if (!location) throw new Error('A loja não informou o destino do link curto. Use o cadastro manual.');
+      const next = importUrl(new URL(location,url).href);
+      const host = new URL(next).hostname;
+      if (host !== 'meli.la' && !mercadoLivreHosts.has(host)) throw new Error('O link curto aponta para um destino não autorizado. Use o cadastro manual.');
+      url = next;
     }
-    if (!response.ok) throw new Error(`A loja recusou ou não encontrou a página (HTTP ${response.status}). Use o cadastro manual.`);
+    if (!response.ok) throw new Error(`Não foi possível consultar a página agora (HTTP ${response.status}). Você pode abrir a loja ou cadastrar manualmente com o link preservado.`);
     if (response.url && importDestination(response.url) !== url) throw new Error('O endereço da resposta mudou. Use o link direto ou o cadastro manual.');
     const contentType = response.headers.get('content-type') ?? '';
     if (!/^(text\/html|application\/xhtml\+xml)(?:\s*;|\s*$)/i.test(contentType)) throw new Error('Este link não retornou uma página de produto HTML.');

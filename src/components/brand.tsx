@@ -1,8 +1,9 @@
 import { Text, View, type ColorValue } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { useUI } from './ui';
-export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow';
+export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow' | 'edit';
 const symbols = {
+  edit: { ios: 'pencil', android: 'edit', web: 'edit' },
   home: { ios: 'house', android: 'home', web: 'home' },
   categories: { ios: 'square.grid.2x2', android: 'grid_view', web: 'grid_view' },
   add: { ios: 'plus', android: 'add', web: 'add' },
@@ -29,5 +30,5 @@ export function Mark({ size = 44 }: { size?: number }) {
 }
 export function Brand() {
   const { colors } = useUI();
-  return <View style={{ flexDirection:'row',alignItems:'center',gap:11 }}><Mark size={36} /><Text style={{ color:colors.text,fontSize:26,fontWeight:'700',letterSpacing:-1 }}>wish</Text></View>;
+  return <View style={{ flexDirection:'row',alignItems:'center',gap:11 }}><Mark size={36} /><Text style={{ color:colors.text,fontSize:26,fontWeight:'700',letterSpacing:-1 }}>Wish</Text></View>;
 }

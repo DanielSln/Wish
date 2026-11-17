@@ -61,7 +61,7 @@ const assert = require('node:assert/strict');
   await page.getByText('Prévia do produto',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Revisar e escolher categoria',exact:true}).click();
   await page.getByLabel('Nome do produto *',{exact:true}).waitFor();
-  assert.equal(await page.getByLabel('Preço conhecido',{exact:true}).inputValue(),'129,90');
+  assert.equal(await page.getByLabel('Preço conhecido',{exact:true}).inputValue(),'129,90');await page.getByRole('button',{name:'Casa',exact:true}).click();
   await page.getByRole('button',{name:'Salvar desejo',exact:true}).click();
   await page.getByRole('button',{name:'Voltar à lista',exact:true}).click();
   await page.getByRole('button',{name:'Ver Importação de teste',exact:true}).waitFor();

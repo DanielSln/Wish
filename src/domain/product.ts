@@ -4,11 +4,11 @@ export type Category = { id: string; name: string };
 export type Product = {
   id: string; name: string; description: string; category_id: string; priority: Priority;
   image_url: string; price_cents: number | null; desired_price_cents: number | null;
-  store: string; original_url: string; notes: string; status: PurchaseStatus;
+  store: string; original_url: string; notes: string; personal_notes: string; offer_details: string; status: PurchaseStatus;
   created_at: string; updated_at: string; deleted_at: string | null;
   category_name?: string;
 };
-export type ProductInput = Omit<Product, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'category_name'>;
+export type ProductInput = Omit<Product, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'category_name' | 'personal_notes' | 'offer_details'> & { personal_notes?: string; offer_details?: string };
 export type Filters = { search?: string; category?: string; status?: string; sort?: 'newest' | 'oldest' | 'price-asc' | 'price-desc' | 'priority' };
 export const priorityLabels = { low: 'Baixa', medium: 'Média', high: 'Alta' };
 export const money = (cents: number | null) => cents === null ? 'Preço não informado' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
@@ -40,5 +40,6 @@ export function validateProduct(input: ProductInput): Record<string, string> {
   for (const key of ['description', 'notes', 'store'] as const) {
     if (input[key].length > (key === 'store' ? 160 : 10000)) errors[key] = 'Texto muito longo.';
   }
+  for (const key of ['personal_notes','offer_details'] as const) { if (input[key] !== undefined && (typeof input[key] !== 'string' || input[key].length > 10000)) errors[key] = 'Texto muito longo ou inválido.'; }
   return errors;
 }

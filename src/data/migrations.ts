@@ -13,7 +13,8 @@ export const defaultCategories = [
 export async function migrate(db: Database) {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
   const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  if ((version?.user_version ?? 0) > 2) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
+  if ((version?.user_version ?? 0) > 4) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
+  if (version?.user_version === 3) throw new Error('Este banco pertence a outra versão de desenvolvimento. Preserve os dados e abra a versão que o criou; não há downgrade automático.');
   if ((version?.user_version ?? 0) === 0) {
     // Runs before screens mount, so no other query can join this transaction.
     await db.withTransactionAsync(async () => {
@@ -44,6 +45,12 @@ export async function migrate(db: Database) {
   if ((version?.user_version ?? 0) < 2) {
     await db.withTransactionAsync(async () => {
       await db.execAsync('CREATE TABLE app_settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL); PRAGMA user_version = 2;');
+    });
+  }
+  // Version 3 is reserved by the separate Supabase branch. Never reinterpret its database.
+  if ((version?.user_version ?? 0) < 4) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync("ALTER TABLE products ADD COLUMN personal_notes TEXT NOT NULL DEFAULT ''; ALTER TABLE products ADD COLUMN offer_details TEXT NOT NULL DEFAULT ''; PRAGMA user_version = 4;");
     });
   }
 }

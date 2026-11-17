@@ -1,0 +1,25 @@
+// Browser regression: text is synthetic. SQLite/import parsing are real app paths.
+const {chromium}=require(process.env.WISH_PLAYWRIGHT_MODULE||'playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.WISH_CHROMIUM_PATH?{executablePath:process.env.WISH_CHROMIUM_PATH}:{}),args:['--no-sandbox']});
+ try{
+  const page=await browser.newPage({viewport:{width:412,height:915},colorScheme:'light'});page.setDefaultTimeout(30000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const short='Descrição curta.\nSegunda linha.';
+  const medium='Descrição de teste com conteúdo preservado e detalhes do produto. '.repeat(4).trimEnd();
+  const long=Array.from({length:18},(_,i)=>`Linha ${i+1} — conteúdo de teste com acentos e detalhes preservados.`).join('\n');
+  const descriptions={short,medium,long};const base=process.env.WISH_TEST_URL||'http://localhost:8093';
+  await page.route('https://www.amazon.com.br/expand-*',r=>{const key=new URL(r.request().url()).pathname.replace('/expand-','');return r.fulfill({status:200,contentType:'text/html',headers:{'Access-Control-Allow-Origin':'*'},body:'<script type="application/ld+json">'+JSON.stringify({'@type':'Product',name:'Descrição de teste',description:descriptions[key],offers:{price:'129.90',priceCurrency:'BRL'}})+'</script>'})});
+  const content=()=>page.locator('[data-testid="expandable-text-content"]:visible');
+  const more=()=>page.getByRole('button',{name:'Ver mais: descrição',exact:true});const less=()=>page.getByRole('button',{name:'Ver menos: descrição',exact:true});
+  async function preview(key){await page.goto(base+'/products/import?url='+encodeURIComponent('https://www.amazon.com.br/expand-'+key),{timeout:120000});await page.getByText('Prévia do produto',{exact:true}).waitFor({timeout:120000});await content().waitFor();}
+  await preview('short');assert.equal(await content().textContent(),short);await page.waitForTimeout(300);assert.equal(await more().count(),0);
+  await preview('medium');await more().waitFor();await page.setViewportSize({width:1400,height:1000});await more().waitFor({state:'hidden'});assert.equal(await content().textContent(),medium);await page.setViewportSize({width:412,height:915});await more().waitFor();
+  await preview('long');await more().waitFor();assert.equal(await content().textContent(),long);const collapsed=(await content().boundingBox()).height;await more().click();await less().waitFor();assert.equal(await less().getAttribute('aria-expanded'),'true');assert.ok((await content().boundingBox()).height>collapsed);assert.equal(await content().textContent(),long);await less().click();await more().waitFor();assert.ok((await content().boundingBox()).height<=collapsed+1);
+  await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>Array.from(document.querySelectorAll('[data-testid="expandable-text-content"]')).some(e=>e.getBoundingClientRect().width>0&&getComputedStyle(e).color==='rgb(170, 192, 206)'));await more().click();await less().waitFor();await less().click();await page.emulateMedia({colorScheme:'light'});
+  await page.getByRole('button',{name:'Revisar e escolher categoria',exact:true}).click();await page.getByRole('button',{name:'Mais detalhes e categorias',exact:true}).click();await more().waitFor();assert.equal(await content().textContent(),long);await page.getByRole('button',{name:'Editar descrição',exact:true}).click();const input=page.getByRole('textbox',{name:'Descrição',exact:true});assert.equal(await input.inputValue(),long);
+  const edited=long+'\nFinal editado — acentuação 🔧';await input.fill(edited);await page.getByRole('button',{name:'Concluir edição da descrição',exact:true}).click();await more().waitFor();assert.equal(await content().textContent(),edited);await page.getByRole('button',{name:'Menos detalhes',exact:true}).click();await page.getByRole('button',{name:'Casa',exact:true}).click();await page.getByRole('button',{name:'Salvar desejo',exact:true}).click();await more().waitFor();assert.equal(await content().textContent(),edited);
+  await more().click();await less().waitFor();await page.reload();await more().waitFor();assert.equal(await content().textContent(),edited);await page.getByRole('button',{name:'Editar produto',exact:true}).click();await page.getByRole('button',{name:'Mais detalhes e categorias',exact:true}).click();await page.getByRole('button',{name:'Editar descrição',exact:true}).click();assert.equal(await input.inputValue(),edited);assert.equal(await page.getByRole('textbox',{name:'Preço conhecido',exact:true}).inputValue(),'129,90');
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({result:'passed',checks:['short without toggle','actual line overflow','width recalculation','expand/collapse retains full value/newlines','light/dark','form review and full editing','close details preserves edits','SQLite reload unchanged content','edit existing full description','price unchanged'],pageErrors:errors}));
+ }finally{await browser.close()}
+})().catch(e=>{console.error(e);process.exit(1)});
