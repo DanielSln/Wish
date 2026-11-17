@@ -1,4 +1,5 @@
 import type { Database } from './migrations.ts';
+import { isLocalImage, remoteImageUrl } from '../domain/image-management.ts';
 import { validateProduct } from '../domain/product.ts';
 import type { Category, Filters, Product, ProductInput, PurchaseStatus } from '../domain/product.ts';
 
@@ -49,6 +50,8 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
     get: (id: string) => db.getFirstAsync<Product>('SELECT p.*,c.name AS category_name FROM products p JOIN categories c ON c.id=p.category_id WHERE p.id=? AND p.deleted_at IS NULL', id),
     async save(input: ProductInput, id?: string) {
       const errors = validateProduct(input);
+      const oldImage = id ? await db.getFirstAsync<{image_url:string}>('SELECT image_url FROM products WHERE id=? AND deleted_at IS NULL',id) : null;
+      if (oldImage && oldImage.image_url === input.image_url) delete errors.image_url; // Preserve unchanged legacy references without creating new insecure ones.
       if (Object.keys(errors).length) throw new Error(Object.values(errors)[0]);
       const category = await db.getFirstAsync<{ id: string }>('SELECT id FROM categories WHERE id=? AND deleted_at IS NULL', input.category_id);
       if (!category) throw new Error('Selecione uma categoria disponível.');
@@ -65,6 +68,11 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
         if (!result.changes) throw new Error('Selecione uma categoria disponível.');
       }
       return id;
+    },
+    async saveImage(id: string, reference: string, expected: string) {
+      if (reference && !isLocalImage(reference)) remoteImageUrl(reference);
+      const result = await db.runAsync('UPDATE products SET image_url=?,updated_at=? WHERE id=? AND image_url=? AND deleted_at IS NULL',reference,now(),id,expected) as {changes:number};
+      if (!result.changes) throw new Error('O produto foi alterado. Reabra a edição antes de trocar a imagem.');
     },
     async savePersonalNotes(id: string, value: string) {
       if (value.length > 10000) throw new Error('Use até 10.000 caracteres.');

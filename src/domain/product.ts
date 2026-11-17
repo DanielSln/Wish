@@ -1,3 +1,4 @@
+import {isLocalImage,remoteImageUrl} from './image-management.ts';
 export type Priority = 'low' | 'medium' | 'high';
 export type PurchaseStatus = 'pending' | 'purchased';
 export type Category = { id: string; name: string };
@@ -30,9 +31,10 @@ export function validateProduct(input: ProductInput): Record<string, string> {
   if (!input.category_id) errors.category_id = 'Selecione uma categoria.';
   if (!Object.hasOwn(priorityLabels, input.priority)) errors.priority = 'Selecione uma prioridade válida.';
   if (!['pending', 'purchased'].includes(input.status)) errors.status = 'Status inválido.';
-  for (const key of ['original_url', 'image_url'] as const) {
+  for (const key of ['original_url'] as const) {
     if (input[key] && (!isHttpUrl(input[key]) || input[key].length > 2048)) errors[key] = 'Informe um endereço http:// ou https:// válido (até 2048 caracteres).';
   }
+  if (input.image_url && !isLocalImage(input.image_url)) { try { remoteImageUrl(input.image_url); } catch (error) { errors.image_url = (error as Error).message; } }
   for (const key of ['price_cents', 'desired_price_cents'] as const) {
     const value = input[key];
     if (value !== null && (!Number.isSafeInteger(value) || value < 0 || value > 99999999999)) errors[key] = 'Preço inválido.';
