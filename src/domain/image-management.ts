@@ -1,15 +1,26 @@
+export type ImageErrorCode = 'URL'|'NETWORK'|'TIMEOUT'|'CANCELLED'|'SERVER'|'REDIRECT'|'CONTENT'|'SIZE'|'FORMAT'|'STREAM'|'CACHE';
+export class ImageLoadError extends Error {
+  readonly code:ImageErrorCode;
+  constructor(code:ImageErrorCode,message:string){super(message);this.code=code;this.name='ImageLoadError';}
+}
+export function imageErrorMessage(error:unknown,web=false):string {
+  if(error instanceof ImageLoadError)return error.message+(web&&error.code==='NETWORK'?' No navegador, o servidor também pode bloquear consultas externas.':'');
+  return 'Não foi possível preparar a imagem. Tente novamente ou escolha uma foto da galeria.';
+}
+function sameImageAddress(first:string,second:string){try{const a=new URL(first),b=new URL(second);a.hash='';b.hash='';return a.href===b.href;}catch{return false;}}
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 export const localImagePattern = /^wish-image:\/\/([a-f0-9]{64})\.(jpg|png|webp|gif)$/;
 export const isLocalImage = (value: string) => localImagePattern.test(value);
 export function remoteImageUrl(value: string): string {
-  if (value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) throw new Error('Use uma URL HTTPS de imagem, com até 2048 caracteres.');
-  let url: URL; try { url = new URL(value); } catch { throw new Error('Informe uma URL HTTPS válida.'); }
+  if (value.length > 2048 || /[\u0000-\u0020\u007f]/.test(value)) throw new ImageLoadError('URL','Endereço inválido. Use um link HTTPS direto de até 2048 caracteres.');
+  let url: URL; try { url = new URL(value); } catch { throw new ImageLoadError('URL','Endereço inválido. Cole o link HTTPS direto da imagem.'); }
   const host = url.hostname.toLowerCase().replace(/\.$/,'');
-  if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') || !host.includes('.') || host.includes(':') || /^[\d.]+$/.test(host) || host === 'localhost.localdomain' || ['.local','.localhost','.internal','.lan','.home'].some(s=>host.endsWith(s))) throw new Error('Use uma imagem HTTPS pública, sem credenciais ou endereço local.');
+  if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') || !host.includes('.') || host.includes(':') || /^[\d.]+$/.test(host) || host === 'localhost.localdomain' || ['.local','.localhost','.internal','.lan','.home'].some(s=>host.endsWith(s))) throw new ImageLoadError('URL','Use um link HTTPS público direto para uma imagem, sem credenciais ou endereço local.');
   return value; // Preserve exact URL and parameters; never rewrite a store/CDN URL.
 }
 export function imageExtension(bytes: Uint8Array): string {
-  if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) throw new Error('A imagem deve ter até 8 MB.');
+  if (!bytes.length) throw new Error('O servidor retornou um arquivo de imagem vazio.');
+  if (bytes.length > MAX_IMAGE_BYTES) throw new Error('A imagem deve ter até 8 MB.');
   if (bytes[0]===0xff && bytes[1]===0xd8 && bytes[2]===0xff) return checkedImage(bytes,'jpg');
   if ([137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v)) return checkedImage(bytes,'png');
   const text = (a:number,b:number)=>String.fromCharCode(...bytes.slice(a,b));
@@ -25,25 +36,35 @@ export interface ImageStorage {
   temporary(bytes: Uint8Array, extension: string): Promise<ImagePreview>;
 }
 export async function remoteImageBytes(value: string, request: typeof fetch, signal?: AbortSignal) {
-  const url=remoteImageUrl(value); const controller=new AbortController();
-  const abort=()=>controller.abort(); signal?.addEventListener('abort',abort,{once:true}); if(signal?.aborted)abort();
-  const timer=setTimeout(abort,12000);
-  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
-  try {
-    const response=await request(url,{signal:controller.signal,redirect:'error',credentials:'omit',headers:{Accept:'image/jpeg,image/png,image/webp,image/gif'}});
-    if (!response.ok || response.redirected || response.url && response.url!==url || !/^image\/(jpeg|png|webp|gif)(?:;|$)/i.test(response.headers.get('content-type')??'')) { await response.body?.cancel(); throw new Error('O endereço não retornou uma imagem compatível.'); }
-    const length=Number(response.headers.get('content-length'));
-    if(length>MAX_IMAGE_BYTES){await response.body?.cancel();throw new Error('A imagem deve ter até 8 MB.');}
-    if(!response.body)throw new Error('Não foi possível conferir o tamanho da imagem.');
-    reader=response.body.getReader();controller.signal.addEventListener('abort',()=>{void reader?.cancel().catch(()=>{});},{once:true});const chunks:Uint8Array[]=[];let total=0;
-    while(true){const part=await reader.read();if(controller.signal.aborted)throw new Error('Consulta de imagem cancelada.');if(part.done)break;total+=part.value.length;if(total>MAX_IMAGE_BYTES)throw new Error('A imagem deve ter até 8 MB.');chunks.push(part.value);}
-    const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}imageExtension(bytes);return bytes;
-  } finally {clearTimeout(timer);signal?.removeEventListener('abort',abort);try{await reader?.cancel();}catch{}reader?.releaseLock();}
+  const url=remoteImageUrl(value);const controller=new AbortController();let timedOut=false;
+  const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+  const timer=setTimeout(()=>{timedOut=true;abort();},12000);let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
+  try{
+    if(controller.signal.aborted)throw new ImageLoadError('CANCELLED','Consulta de imagem cancelada.');
+    const response=await request(url,{signal:controller.signal,redirect:'manual',credentials:'omit',headers:{Accept:'image/jpeg,image/png,image/webp,image/gif'}});
+    if(response.type==='opaqueredirect'||response.status>=300&&response.status<400||response.redirected||response.url&&!sameImageAddress(response.url,url)){
+      await response.body?.cancel();throw new ImageLoadError('REDIRECT','Esse endereço redireciona. Use o link HTTPS final e direto da imagem.');
+    }
+    if(!response.ok){await response.body?.cancel();throw new ImageLoadError('SERVER',response.status===404?'Imagem não encontrada no servidor (HTTP 404).':`O servidor não disponibilizou a imagem (HTTP ${response.status}). Tente outro link.`);}
+    if(!/^image\/(jpeg|png|webp|gif)(?:;|$)/i.test(response.headers.get('content-type')??'')){await response.body?.cancel();throw new ImageLoadError('CONTENT','O servidor não disponibilizou um arquivo JPEG, PNG, WebP ou GIF. Use o link da imagem, não o da página.');}
+    if(Number(response.headers.get('content-length'))>MAX_IMAGE_BYTES){await response.body?.cancel();throw new ImageLoadError('SIZE','A imagem ultrapassa o limite de 8 MB.');}
+    if(!response.body)throw new ImageLoadError('STREAM','Não foi possível conferir o tamanho da imagem neste cliente. Tente outra imagem.');
+    reader=response.body.getReader();controller.signal.addEventListener('abort',()=>{void reader?.cancel().catch(()=>{});},{once:true});
+    const chunks:Uint8Array[]=[];let total=0;
+    while(true){const part=await reader.read();if(controller.signal.aborted)throw new ImageLoadError('CANCELLED','Consulta de imagem cancelada.');if(part.done)break;total+=part.value.length;if(total>MAX_IMAGE_BYTES)throw new ImageLoadError('SIZE','A imagem ultrapassa o limite de 8 MB.');chunks.push(part.value);}
+    const bytes=new Uint8Array(total);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+    try{imageExtension(bytes);}catch(error){throw new ImageLoadError('FORMAT',error instanceof Error?error.message:'O arquivo da imagem é inválido ou corrompido.');}return bytes;
+  }catch(error){
+    if(timedOut)throw new ImageLoadError('TIMEOUT','O servidor demorou mais de 12 segundos para enviar a imagem. Tente novamente.');
+    if(controller.signal.aborted)throw new ImageLoadError('CANCELLED','Consulta de imagem cancelada.');
+    if(error instanceof ImageLoadError)throw error;
+    throw new ImageLoadError('NETWORK','Não foi possível acessar a imagem. Confira sua conexão e tente novamente.');
+  }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);try{await reader?.cancel();}catch{}reader?.releaseLock();}
 }
 export function createImageManager(storage: ImageStorage, request: typeof fetch) {
   return {
     async local(uri:string) {const bytes=await storage.readPicked(uri);const extension=imageExtension(bytes);return {bytes,extension,preview:await storage.temporary(bytes,extension)};},
-    async remote(url:string,signal?:AbortSignal) {const bytes=await remoteImageBytes(url,request,signal);return storage.temporary(bytes,imageExtension(bytes));},
+    async remote(url:string,signal?:AbortSignal) {const bytes=await remoteImageBytes(url,request,signal);try{return await storage.temporary(bytes,imageExtension(bytes));}catch{throw new ImageLoadError('CACHE','Não foi possível preparar a prévia neste aparelho. Tente novamente ou escolha uma foto da galeria.');}},
     persist:(bytes:Uint8Array)=>storage.persist(bytes,imageExtension(bytes)),
     async display(reference:string,signal?:AbortSignal):Promise<ImagePreview|null> {
       if(isLocalImage(reference)){const uri=await storage.resolve(reference);return uri?{uri,release:()=>{}}:null;}

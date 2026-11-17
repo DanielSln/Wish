@@ -36,7 +36,7 @@ test('URLs reject local/dangerous sources; references cannot traverse private pa
 });
 test('remote loader bounds bytes, requires actual raster image and refuses redirects without guessing URLs',async()=>{
  const url='https://img.youcom.com.br/photo.png?width=1';let calls=0;
- const request=async(address,options)=>{calls++;assert.equal(address,url);assert.equal(options.redirect,'error');assert.equal(options.credentials,'omit');return new Response(png,{headers:{'Content-Type':'image/png'}})};
+ const request=async(address,options)=>{calls++;assert.equal(address,url);assert.equal(options.redirect,'manual');assert.equal(options.credentials,'omit');return new Response(png,{headers:{'Content-Type':'image/png'}})};
  const storage=files(mkdtempSync(join(tmpdir(),'wish-fetch-')));
  try{const manager=createImageManager(storage,request);assert.ok(await manager.remote(url));assert.equal(calls,1);await assert.rejects(manager.remote('http://example.com/a'));assert.equal(calls,1);
   for(const response of [new Response('<html>login</html>',{headers:{'Content-Type':'text/html'}}),new Response('<svg/>',{headers:{'Content-Type':'image/png'}}),new Response(png,{headers:{'Content-Type':'image/png','Content-Length':String(MAX_IMAGE_BYTES+1)}}),new Response(null,{status:302})])await assert.rejects(createImageManager(storage,async()=>response).remote(url));
@@ -60,4 +60,12 @@ test('atomic file cleanup respects Expo move URI mutation and never deletes the 
 
 test('legacy v4 references remain unchanged on ordinary edits; new insecure images are rejected',async()=>{
  const raw=new DatabaseSync(':memory:');try{const db=dbAdapter(raw);await migrate(db);const repo=createRepository(db,randomUUID);const category=(await repo.categories())[0].id;const id=await repo.save({name:'Legado',description:'',category_id:category,priority:'medium',image_url:'',price_cents:null,desired_price_cents:null,store:'',original_url:'',notes:'',status:'pending'});raw.prepare('UPDATE products SET image_url=? WHERE id=?').run('http://legacy.example/small.jpg',id);const old=await repo.get(id);await repo.save({...old,name:'Legado editado'},id);assert.equal((await repo.get(id)).image_url,old.image_url);await assert.rejects(repo.saveImage(id,'http://other.example/photo.jpg',old.image_url));assert.equal((await repo.get(id)).name,'Legado editado');}finally{raw.close()}
+});
+
+test('remote replacement persists exact URL after restart while cancelled preview and local photo remain intact',async()=>{
+ const root=mkdtempSync(join(tmpdir(),'wish-remote-persist-'));let raw=new DatabaseSync(join(root,'wish.db'));
+ try{const storage=files(root),manager=createImageManager(storage,async()=>new Response(png,{headers:{'Content-Type':'image/png'}}));await migrate(dbAdapter(raw));let repo=createRepository(dbAdapter(raw),randomUUID);const local=await manager.persist(png);const category=(await repo.categories())[0].id;const product={name:'Foto remota',description:'Descrição',category_id:category,priority:'medium',image_url:local,price_cents:11990,desired_price_cents:9990,store:'Loja',original_url:'https://example.com/product',notes:'Legado',personal_notes:'Nota',offer_details:'Oferta',status:'pending'};const id=await repo.save(product);const before=await repo.get(id);const url='https://img.youcom.com.br/direct.png?width=1000&token=preserved';
+ const preview=await manager.remote(url);preview.release();assert.deepEqual(await repo.get(id),before);
+ await repo.saveImage(id,url,local);raw.close();raw=new DatabaseSync(join(root,'wish.db'));await migrate(dbAdapter(raw));repo=createRepository(dbAdapter(raw),randomUUID);const after=await repo.get(id);assert.equal(after.image_url,url);const rest=p=>{const {image_url,updated_at,...other}=p;return other};assert.deepEqual(rest(after),rest(before));assert.ok(await manager.display(local));assert.equal(raw.prepare('PRAGMA user_version').get().user_version,4);
+ }finally{raw.close();rmSync(root,{recursive:true,force:true})}
 });
