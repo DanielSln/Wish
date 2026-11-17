@@ -35,7 +35,7 @@ cd Wish
 git fetch origin
 git switch --track origin/feature/expo-go-readiness
 npm ci
-npx expo start --go
+npm start -- --go
 ```
 
 Use a branch de revisão acima enquanto o novo PR estiver aberto. **Depois da integração autorizada**, pode executar na main:
@@ -44,7 +44,7 @@ Use a branch de revisão acima enquanto o novo PR estiver aberto. **Depois da in
 git switch main
 git pull --ff-only
 npm ci
-npx expo start --go
+npm start -- --go
 ```
 
 Não execute os dois blocos ao mesmo tempo. O comando usa a CLI local do projeto; não é preciso instalar expo-cli global. `npm ci` usa package-lock.json e foi validado nesta revisão. O servidor continua aberto no terminal até Ctrl+C.
@@ -65,7 +65,7 @@ Se houver alterações próprias, preserve-as em commit/branch antes de continua
 ```powershell
 git switch --track origin/feature/expo-go-readiness
 npm ci
-npx expo start --go
+npm start -- --go
 ```
 
 Se ela já existe localmente:
@@ -74,13 +74,13 @@ Se ela já existe localmente:
 git switch feature/expo-go-readiness
 git pull --ff-only
 npm ci
-npx expo start --go
+npm start -- --go
 ```
 
 ## Abrir pelo QR Code
 
 1. Abra Expo Go compatível no Android. Coloque celular e computador na mesma rede Wi-Fi.
-2. No computador execute `npx expo start --go` na pasta Wish. O terminal deve indicar Expo Go e mostrar QR Code/URL `exp://...`.
+2. No computador execute `npm start -- --go` na pasta Wish. O terminal deve indicar Expo Go e mostrar QR Code/URL `exp://...`.
 3. Use **Scan QR Code** no Expo Go e escaneie o QR do seu terminal. Autorize a câmera apenas se o leitor solicitar. Essa permissão pertence ao Expo Go; o Wish não usa câmera, fotos, contatos ou localização.
 4. Aguarde baixar o bundle. O Wish abre diretamente na lista, com Início, Categorias, Adicionar, Comprados e Configurações.
 
@@ -96,8 +96,8 @@ O app usa rede para carregar o JavaScript durante o desenvolvimento, importar p�
 | QR não abre / timeout / “Unable to load script” | Confirmar mesmo Wi-Fi, evitar rede de convidados com isolamento, conferir endereço LAN do computador e manter Metro aberto. Verificar VPN/proxy. No Firewall do Windows, permitir Node.js na rede privada; não desligar o firewall inteiro. |
 | LAN não funciona | Parar Metro com Ctrl+C e tentar o túnel abaixo. Tunnel precisa de internet e serviço de terceiros disponível. |
 | npm.ps1/npx.ps1 bloqueado pelo PowerShell | Usar `npm.cmd ci` e `npx.cmd expo start --go`, ou abrir Prompt de Comando. Não precisa mudar a política global de execução. |
-| porta 8081 ocupada | Parar outro Metro ou usar `npx expo start --go --port 8082`; escanear o novo QR. |
-| cache antigo após atualizar a branch | Parar Metro e usar `npx expo start --go --clear`. Cache de Metro é diferente do banco SQLite; não limpar dados do Expo Go. |
+| porta 8081 ocupada | Parar outro Metro ou usar `npm start -- --go --port 8082`; escanear o novo QR. |
+| cache antigo após atualizar a branch | Parar Metro e usar `npm start -- --go --clear`. Cache de Metro é diferente do banco SQLite; não limpar dados do Expo Go. |
 | módulo nativo ausente / “React Native version mismatch” | Conferir checkout correto, rodar `npm ci`, instalar o Expo Go SDK 58 e reiniciar Metro com --clear. Não instalar dependências nativas aleatórias. |
 | HTTP 403/429, login da loja ou ausência de metadados | Respeitar o bloqueio; preencher manualmente. Túnel do Expo não é proxy de scraping e não contorna bloqueios da loja. |
 | navegador recusa importação por CORS | É limitação do acesso web à loja; o resultado pode diferir no Android. Não usar proxy público para contornar. Cadastro manual continua disponível. |
@@ -105,10 +105,10 @@ O app usa rede para carregar o JavaScript durante o desenvolvimento, importar p�
 Alternativa gratuita de rede:
 
 ```powershell
-npx expo start --go --tunnel
+npm start -- --go --tunnel
 ```
 
-`@expo/ngrok` já consta no lockfile. O comando acima usa o túnel padrão da CLI, que nesta versão exige autenticação Expo. A opção legada `npx expo start --go --tunnel ngrok` também é válida; neste ambiente ela terminou com timeout. Essa autenticação da ferramenta não adiciona login ao Wish. O túnel temporário pode sofrer fila, bloqueio da rede ou indisponibilidade. Não foi validado um túnel acessível por celular nesta entrega e não é necessário contratar serviço pago. Se falhar, retorne à LAN ou tente outra rede confiável.
+`@expo/ngrok` já consta no lockfile. O comando acima usa o túnel padrão da CLI, que nesta versão exige autenticação Expo. A opção legada `npm start -- --go --tunnel ngrok` também é válida; neste ambiente ela terminou com timeout. Essa autenticação da ferramenta não adiciona login ao Wish. O túnel temporário pode sofrer fila, bloqueio da rede ou indisponibilidade. Não foi validado um túnel acessível por celular nesta entrega e não é necessário contratar serviço pago. Se falhar, retorne à LAN ou tente outra rede confiável.
 
 ## Roteiro de uso e persistência
 
@@ -151,3 +151,23 @@ npx expo install --check
 As suítes de navegador são opcionais e precisam de Playwright/Chromium fornecidos pelo ambiente, sem incluí-los no app. Com Metro web ativo, executar tests/ui/navigation.cjs e tests/ui/import-flow.cjs, definindo WISH_TEST_URL quando a porta não for 8082/8093. WISH_PLAYWRIGHT_MODULE e WISH_CHROMIUM_PATH aceitam instalações externas.
 
 Referências: [SDK 58](https://docs.expo.dev/versions/v58.0.0/), [Expo Go incompatível](https://docs.expo.dev/troubleshooting/expo-go-version-mismatch/), [CLI e túnel](https://docs.expo.dev/more/expo-cli/), [SQLite SDK 58](https://docs.expo.dev/versions/v58.0.0/sdk/sqlite/).
+
+## Evitar abrir uma versão antiga sobre o banco v4
+
+O incidente de 16/11 ocorreu porque o servidor local foi iniciado na branch antiga feature/product-management (esquema v1), sem conferir os avanços do remoto. A primeira correção abriu a main, ainda v2. O celular já tinha executado feature/expo-go-readiness e mantinha banco v4. Os dois códigos antigos recusaram a abertura corretamente; não era preciso resetar banco nem fazer merge para corrigir o servidor. A execução de feature/expo-go-readiness voltou a abrir o mesmo banco, conforme confirmação do proprietário.
+
+Para retomar:
+
+```powershell
+cd D:\Projetos\Wish
+git status --short
+git fetch origin
+git switch feature/expo-go-readiness
+git pull --ff-only
+node scripts/start-expo.mjs --check
+npm start -- --go --tunnel ngrok --port 8082
+```
+
+Preserve alterações próprias antes de trocar de branch; nunca use reset/clean nem apague o SQLite. Feche o servidor anterior antes de iniciar outro. O comando npm start (e android/ios/web) agora passa por uma verificação que imprime pasta, branch, commit e esquema. Ela aceita esta branch e, futuramente, main com esquema v4; recusa branch diferente, esquema antigo/desconhecido ou diretório sem Git. Não consulta nem altera o banco do aparelho.
+
+Limite: npx expo start direto ignora esse wrapper; uma cópia antiga que não contém o script também não recebe magicamente a proteção. Sempre confira o caminho, branch e resumo de início. Não volte à main v2 com o catálogo v4. Após merge explicitamente autorizado deste PR, a main terá v4 e poderá ser usada. O banco v3 do PR #5 permanece separado e recusado; não tente converter v3 em v4 mudando apenas o número.

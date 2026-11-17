@@ -12,10 +12,10 @@ cd Wish
 git fetch origin
 git switch --track origin/feature/expo-go-readiness
 npm ci
-npx expo start --go
+npm start -- --go
 ```
 
-Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npx expo start --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
+Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
 Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
@@ -40,7 +40,7 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 `src/components/`: formulário, imagem e elementos visuais compartilhados.
 `src/app/products/`: rotas de cadastro, edição e detalhes.
 
-Banco wish.db, esquema v2 (a v2 acrescenta app_settings para aparência; produtos/categorias da v1 são preservados): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
+Banco wish.db, esquema v4 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
 ## Fase 3 — Importação por link
 
