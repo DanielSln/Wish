@@ -1,3 +1,4 @@
+import { ImageEditor } from './image-editor';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
@@ -13,6 +14,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
   const { colors, styles } = useUI();
   const repo = useProducts();
   const manualCategory = useRef(false);
+  const persistedImage = useRef('');
   const [details, setDetails] = useState(false);
   const [input, setInput] = useState<ProductInput>(empty);
   const [price, setPrice] = useState(''); const [desiredPrice, setDesiredPrice] = useState('');
@@ -27,7 +29,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
       if (!alive) return;
       if (id && !product) { setLoadError('Produto não encontrado.'); return; }
       setCategories(cats);
-      if (product) { setInput(product); setPrice(product.price_cents === null ? '' : (product.price_cents / 100).toFixed(2).replace('.', ',')); setDesiredPrice(product.desired_price_cents === null ? '' : (product.desired_price_cents / 100).toFixed(2).replace('.', ',')); }
+      if (product) { persistedImage.current=product.image_url; setInput(product); setPrice(product.price_cents === null ? '' : (product.price_cents / 100).toFixed(2).replace('.', ',')); setDesiredPrice(product.desired_price_cents === null ? '' : (product.desired_price_cents / 100).toFixed(2).replace('.', ',')); }
       else {
         setInput({ ...empty, ...initial, category_id: initial?.category_id ?? suggestCategory(initial?.name??'',cats,initial?.category_hint,initial?.description) ?? '' });
         setPrice(initial?.price_cents == null ? '' : (initial.price_cents / 100).toFixed(2).replace('.', ','));
@@ -39,6 +41,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     if (busy) return;
     const next = { ...input, name: input.name.trim(), original_url: input.original_url.trim(), image_url: input.image_url.trim() };
     const validation = validateProduct(next);
+    if (id && next.image_url===persistedImage.current) delete validation.image_url;
     try { next.price_cents = parsePrice(price); } catch (e) { validation.price_cents = (e as Error).message; }
     try { next.desired_price_cents = parsePrice(desiredPrice); } catch (e) { validation.desired_price_cents = (e as Error).message; }
     setErrors(validation); setError('');
@@ -64,6 +67,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     <Text style={styles.heading}>{id ? 'Seu desejo, do seu jeito' : 'O que você quer conquistar?'}</Text>
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {!!input.image_url && <ProductImage uri={input.image_url} large />}
+    {!!id && <ImageEditor id={id} value={input.image_url} disabled={busy} onSaved={image_url=>{persistedImage.current=image_url;setInput(value=>({...value,image_url}));}}/>}
     {field('name', 'Nome do produto *')}
     {!!input.store && <Text style={styles.body}>{input.store}</Text>}
     {!!input.original_url && <Text style={[styles.body,{fontSize:12}]}>O endereço da loja será preservado.</Text>}
@@ -74,7 +78,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     <Button title={details ? 'Menos detalhes' : 'Mais detalhes e categorias'} variant="secondary" onPress={() => setDetails(v => !v)} />
     {details && <View style={{ gap: 22 }}>
     <View><Text style={styles.label}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60} /><Button title="Criar categoria" disabled={busy || !newCategory.trim()} onPress={addCategory} style={{ marginTop: 10 }} /></View>
-    {field('original_url','Link do produto (opcional)')}{field('image_url','URL da imagem (opcional)')}
+    {field('original_url','Link do produto (opcional)')}{!id && field('image_url','URL da imagem (opcional)')}
     <View><Text style={styles.label}>Preço desejado (R$)</Text><TextInput accessibilityLabel="Preço desejado" editable={!busy} style={styles.input} keyboardType="decimal-pad" value={desiredPrice} onChangeText={setDesiredPrice} placeholder="999,90" placeholderTextColor={colors.muted} />{!!errors.desired_price_cents && <Text style={styles.error}>{errors.desired_price_cents}</Text>}</View>
     {field('store','Loja')}<DescriptionField value={input.description} onChange={description => setInput(value => ({...value,description}))} editable={!busy} error={errors.description} />{field('personal_notes','Anotações pessoais',true)}
     {!!input.offer_details&&<View><Text style={styles.label}>Ofertas e condições</Text><ExpandableText text={input.offer_details} label="ofertas e condições"/></View>}
