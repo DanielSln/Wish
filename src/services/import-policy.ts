@@ -19,3 +19,17 @@ export const importImageHosts = new Set([
 
 // Only the dedicated Mercado Livre short-link path may redirect, one validated hop at a time.
 export const mercadoLivreHosts = new Set(['mercadolivre.com.br','www.mercadolivre.com.br','produto.mercadolivre.com.br']);
+
+// Keep a product's imported image on its own reviewed store/CDN family.
+export function imageHostMatchesStore(sourceHost: string, imageHost: string): boolean {
+  const groups = [
+    { stores: ['amazon.com.br','www.amazon.com.br'], images: ['m.media-amazon.com','images-na.ssl-images-amazon.com'] },
+    { stores: [...mercadoLivreHosts,'meli.la'], images: ['http2.mlstatic.com'] },
+    { stores: ['magazineluiza.com.br','www.magazineluiza.com.br'], images: ['a-static.mlcdn.com.br'] },
+    { stores: ['kabum.com.br','www.kabum.com.br','images.kabum.com.br','static.kabum.com.br'], images: ['images.kabum.com.br','static.kabum.com.br'] },
+    { stores: ['youcom.com.br','www.youcom.com.br'], images: ['img.youcom.com.br'] },
+    { stores: ['casasbahia.com.br','www.casasbahia.com.br'], images: [] },
+  ];
+  const group = groups.find(g => g.stores.includes(sourceHost));
+  return !!group && group.images.includes(imageHost);
+}

@@ -153,3 +153,18 @@ test('v2 to v4 preserves every legacy note verbatim and adds separate empty pers
  raw.exec('PRAGMA user_version=3');await assert.rejects(migrate(db),/outra versão/);assert.equal(raw.prepare('SELECT notes FROM products WHERE id=?').get(id).notes,legacy);
  }finally{raw.close()}
 });
+
+test('manual Mercado Livre fallback saves and reopens with the exact selected link; v4 reopen keeps old image',async()=>{
+ const raw=new DatabaseSync(':memory:');try{
+  const db=adapter(raw);await migrate(db);const repo=createRepository(db,randomUUID);
+  const {manualProductFromLink}=await import('../src/services/product-import.ts');
+  const url='https://meli.la/fixture?ref=preservado';
+  const category=(await repo.categories())[0].id;
+  const oldImage='https://img.youcom.com.br/already-saved-thumbnail.webp';
+  const id=await repo.save({...input(category),...manualProductFromLink(url),image_url:oldImage,personal_notes:'Minha nota',offer_details:'Oferta revisada'});
+  const before=await repo.get(id);await migrate(db);const after=await repo.get(id);
+  assert.equal(raw.prepare('PRAGMA user_version').get().user_version,4);
+  assert.deepEqual(after,before);assert.equal(after.original_url,url);assert.equal(after.image_url,oldImage);
+  assert.equal(after.personal_notes,'Minha nota');assert.equal(after.offer_details,'Oferta revisada');
+ }finally{raw.close()}
+});

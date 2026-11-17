@@ -1,6 +1,7 @@
+import { selectProductImage } from './product-images.ts';
 import { extractPrices, type PriceEvidence } from './import-prices.ts';
 import type { ProductInput } from '../domain/product.ts';
-import { importHosts, importImageHosts, mercadoLivreHosts } from './import-policy.ts';
+import { importHosts, importImageHosts, mercadoLivreHosts, imageHostMatchesStore } from './import-policy.ts';
 
 export type ImportedProduct = Pick<ProductInput, 'name' | 'description' | 'image_url' | 'price_cents' | 'store' | 'original_url' | 'notes' | 'offer_details'> & { category_hint?: string };
 export type ImportPreview = { product: ImportedProduct; warnings: string[]; prices: PriceEvidence };
@@ -66,22 +67,21 @@ function attributes(tag: string) {
   return result;
 }
 function imageUrl(value: unknown, base: string): string {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  const source = typeof candidate === 'string' ? candidate : record(candidate).url;
+  const source = typeof value === 'string' ? value : record(value).url;
   if (typeof source !== 'string' || !source.trim()) return '';
   try {
     const url = importUrl(new URL(source, base).href);
-    return importImageHosts.has(new URL(url).hostname) ? url : '';
+    return importImageHosts.has(new URL(url).hostname) && imageHostMatchesStore(new URL(base).hostname, new URL(url).hostname) ? url : '';
   } catch { return ''; }
 }
 export function extractProduct(html: string, sourceUrl: string, now = Date.now()): ImportPreview {
   const source = importUrl(sourceUrl);
   if (html.length > MAX_HTML) throw new Error('A página é muito grande para importar. Cadastre o produto manualmente.');
-  const meta: Record<string, string> = {};
+  const meta: Record<string, string> = {}; const imageMetas: Record<string,string>[] = [];
   // Scripts/comments cannot masquerade as HTML metadata. JSON-LD is read separately.
   const markup = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
   for (const tag of markup.match(/<meta\b[^>]*>/gi) ?? []) {
-    const attrs = attributes(tag);
+    const attrs = attributes(tag); imageMetas.push(attrs);
     const key = (attrs.property ?? attrs.name ?? '').toLowerCase();
     if (key && !(key in meta)) meta[key] = attrs.content ?? '';
   }
@@ -109,7 +109,7 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
   if (!products.length && (new URL(source).pathname === '/' || meta['og:type']?.toLowerCase() === 'website')) throw new ProductMetadataUnavailable();
   const prices = extractPrices(item, meta, source, now, nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
   const knownPrice = prices.current_cents;
-  const image = imageUrl(item.image, source) || imageUrl(meta['og:image'], source);
+  const image = selectProductImage(item.image, imageMetas, (markup.match(/<img\b[^>]*>/gi) ?? []).map(attributes), source, name, value => imageUrl(value, source));
   if (!name && !image && knownPrice === null) throw new ProductMetadataUnavailable();
   const product: ImportedProduct = {
     name,
