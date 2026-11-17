@@ -1,6 +1,6 @@
 # Wish
 
-Fase 5 em revisão: troca manual de imagem, galeria privada e URLs com prévia. Veja [limites, arquitetura e roteiro físico](docs/PHASE-5-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
+Fases 5/5.1 em revisão: troca manual de imagem, galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 

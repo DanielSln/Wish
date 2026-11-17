@@ -1,5 +1,7 @@
 # Fase 5 — imagens dos desejos
 
+> Atualização 5.1: sete fluxos foram aprovados fisicamente pelo proprietário. O diagnóstico HTTPS e o enquadramento foram refinados no mesmo PR #7; veja [PHASE-5-1-IMAGES.md](PHASE-5-1-IMAGES.md). Os resultados e limites abaixo registram a implementação inicial.
+
 Base: main 6814190 (merge do PR #6). Branch feature/product-images-ux. SQLite continua v4, sem migração ou recriação de banco. PR #5/Supabase permanece separado e não foi alterado.
 
 ## Uso no celular
