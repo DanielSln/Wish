@@ -105,3 +105,7 @@ Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm ed
 ### Cadastro em outras lojas e carregamento
 
 Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas podem seguir com **Continuar cadastro**, mantendo URL/domínio e preenchimento manual; a ausência de prévia não bloqueia salvar. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
+
+### Primeira APK e título compacto
+
+Preparação da Fase 6, auditoria da splash, situação da build e roteiro físico: [docs/PHASE-6-ANDROID-PREVIEW.md](docs/PHASE-6-ANDROID-PREVIEW.md). APK ainda depende de autenticação Expo e validação de conta/credenciais.
