@@ -1,3 +1,4 @@
+import { KeyboardDialog } from './keyboard-dialog';
 import { ImageEditor } from './image-editor';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
@@ -15,6 +16,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
   const repo = useProducts();
   const manualCategory = useRef(false);
   const persistedImage = useRef('');
+  const [creatingCategory,setCreatingCategory]=useState(false);
   const [details, setDetails] = useState(false);
   const [input, setInput] = useState<ProductInput>(empty);
   const [price, setPrice] = useState(''); const [desiredPrice, setDesiredPrice] = useState('');
@@ -54,7 +56,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
   async function addCategory() {
     if (busy) return;
     setBusy(true); setError('');
-    try { manualCategory.current=true; const categoryId = await repo.addCategory(newCategory); setCategories(await repo.categories()); setInput(v => ({ ...v, category_id: categoryId })); setNewCategory(''); }
+    try { manualCategory.current=true; const categoryId = await repo.addCategory(newCategory); setCategories(await repo.categories()); setInput(v => ({ ...v, category_id: categoryId })); setNewCategory('');setCreatingCategory(false); }
     catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível criar a categoria.'); }
     finally { setBusy(false); }
   }
@@ -73,11 +75,11 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     {!!input.original_url && <Text style={[styles.body,{fontSize:12}]}>O endereço da loja será preservado.</Text>}
     <View><Text style={styles.label}>Categoria</Text><Text style={[styles.body,{fontSize:12}]}>Sugestão local quando reconhecida. Você pode escolher outra categoria.</Text><View style={styles.row}>{categories.map(c => <Chip key={c.id} title={c.name} active={input.category_id === c.id} onPress={() => { if(!busy){manualCategory.current=true;setInput(v=>({...v,category_id:c.id}));} }} />)}</View>{!!errors.category_id && <Text style={styles.error}>{errors.category_id}</Text>}</View>
     <View><Text style={styles.label}>Preço conhecido (R$)</Text><TextInput accessibilityLabel="Preço conhecido" editable={!busy} style={styles.input} keyboardType="decimal-pad" value={price} onChangeText={setPrice} placeholder="1299,90" placeholderTextColor={colors.muted} />{!!errors.price_cents && <Text style={styles.error}>{errors.price_cents}</Text>}</View>
-    <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(p => <Chip key={p} title={priorityLabels[p]} active={input.priority === p} onPress={() => !busy && setInput(v => ({ ...v, priority: p }))} />)}</View></View>
+    <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(p => <Chip key={p} title={priorityLabels[p]} color={{high:colors.priorityHigh,medium:colors.priorityMedium,low:colors.priorityLow}[p]} active={input.priority === p} onPress={() => !busy && setInput(v => ({ ...v, priority: p }))} />)}</View></View>
     <Text style={[styles.body,{fontSize:12}]}>Preço opcional, sem atualização automática. Confira o valor na loja; se usar cupom, informe o preço confirmado por você.</Text>
     <Button title={details ? 'Menos detalhes' : 'Mais detalhes e categorias'} variant="secondary" onPress={() => setDetails(v => !v)} />
     {details && <View style={{ gap: 22 }}>
-    <View><Text style={styles.label}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60} /><Button title="Criar categoria" disabled={busy || !newCategory.trim()} onPress={addCategory} style={{ marginTop: 10 }} /></View>
+    <Button title="Criar categoria" disabled={busy} onPress={()=>{setError('');setCreatingCategory(true)}}/>
     {field('original_url','Link do produto (opcional)')}{!id && field('image_url','URL da imagem (opcional)')}
     <View><Text style={styles.label}>Preço desejado (R$)</Text><TextInput accessibilityLabel="Preço desejado" editable={!busy} style={styles.input} keyboardType="decimal-pad" value={desiredPrice} onChangeText={setDesiredPrice} placeholder="999,90" placeholderTextColor={colors.muted} />{!!errors.desired_price_cents && <Text style={styles.error}>{errors.desired_price_cents}</Text>}</View>
     {field('store','Loja')}<DescriptionField value={input.description} onChange={description => setInput(value => ({...value,description}))} editable={!busy} error={errors.description} />{field('personal_notes','Anotações pessoais',true)}
@@ -85,5 +87,5 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     {!!input.notes&&<View><Text style={styles.label}>Texto preservado de versões anteriores</Text><Text style={styles.body}>A origem deste texto não foi classificada automaticamente.</Text><ExpandableText text={input.notes} label="texto anterior"/></View>}
     </View>}
     <Button title={busy ? 'Salvando…' : 'Salvar desejo'} disabled={busy} onPress={save} />
-  </ScrollView></KeyboardAvoidingView>;
+  </ScrollView><KeyboardDialog visible={creatingCategory} onClose={()=>{if(!busy)setCreatingCategory(false)}}><View style={styles.card}><Text style={styles.heading}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60}/>{!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Salvar categoria" disabled={busy||!newCategory.trim()} onPress={addCategory}/><Button title="Cancelar" variant="secondary" disabled={busy} onPress={()=>{setCreatingCategory(false);setError('')}}/></View></KeyboardDialog></KeyboardAvoidingView>;
 }
