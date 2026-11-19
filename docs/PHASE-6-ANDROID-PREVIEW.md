@@ -5,7 +5,7 @@
 Base: main 29dea24, merge aprovado do PR #7. Branch: feature/android-preview-splash.
 A Fase 5/5.1 foi aprovada fisicamente pelo proprietário conforme solicitação desta fase; isso não valida a nova APK.
 
-**APK ainda não gerada.** EAS CLI 27.10.0, Node 24.22.1. Login confirmado na conta danielsln. Após autorização explícita, criado e vinculado @danielsln/wish (projectId público dea8d846-f32c-41e2-bf98-2a20f6fbe3d1). eas config preview Android aprovado, sem variáveis remotas de ambiente configuradas. Consulta de plano/cota por métodos oficiais do EAS: Free, 0/15 builds Android usadas, período até 01/12/2026 UTC (cota pode mudar). Nenhum custo aceito. Aguardando confirmação da geração gerenciada de assinatura e inexistência de APK anterior. Build ID, commit de build e link APK: pendentes.
+**APK gerada com sucesso: FINISHED.** EAS CLI 27.10.0, Node 24.22.1. Login confirmado na conta danielsln. Após autorização explícita, criado e vinculado @danielsln/wish (projectId público dea8d846-f32c-41e2-bf98-2a20f6fbe3d1). eas config preview Android aprovado, sem variáveis remotas de ambiente configuradas. Consulta de plano/cota por métodos oficiais do EAS: Free, 0/15 builds Android usadas, período até 01/12/2026 UTC (cota pode mudar). Nenhum custo aceito. Proprietário confirmou somente Expo Go instalado e autorizou geração/armazenamento remoto da assinatura. Keystore criado pelo EAS, nenhum segredo local/commitado. Build enviada uma única vez: 11b50d96-9fa9-43ab-b216-2b654093c6c4; commit 1e3ed3f8677b42669b7ee331f4c4bb8392e4218b; Wish 1.0.0/versionCode 1, preview/internal/release APK. Estado final FINISHED; uma única build remota, sem plano pago/cobrança aceita. Acompanhar: https://expo.dev/accounts/danielsln/projects/wish/builds/11b50d96-9fa9-43ab-b216-2b654093c6c4
 
 ## Configuração auditada
 
@@ -52,6 +52,17 @@ Somente detalhes: fonte 32 → 22, linha 28; três linhas iniciais, sem altura m
 
 Referências: https://docs.expo.dev/build-reference/apk/ e https://docs.expo.dev/billing/plans/
 
+## Artefato compilado e verificado
+
+- Build ID: 11b50d96-9fa9-43ab-b216-2b654093c6c4.
+- Commit de código usado: 1e3ed3f8677b42669b7ee331f4c4bb8392e4218b. Commits posteriores só registram o resultado.
+- Versão: 1.0.0, versionCode 1; com.danielsln.wish; preview, Android INTERNAL, developmentClient false.
+- APK: https://expo.dev/artifacts/eas/92AAs3CRHVMbYMooA8nr9puvxbmhsG8nX7T_jNtukbo.apk
+- Download HTTP realizado e ZIP inspecionado: 106589210 bytes (~101,7 MiB), contém AndroidManifest.xml, classes.dex e assets/index.android.bundle (2616508 bytes). Não é apenas um export nem um pacote AAB.
+- SHA-256: 418db02612655dc38d3bbaa88516779d88a387f4813ff312e3ec786e0d7d1c67.
+- Cópia local verificada: D:/Projetos/Wish/.expo/phase6/Wish-1.0.0-preview.apk (ignorada no Git).
+- Verificação do arquivo não substitui instalação e execução. Não foi executada instrumentação nem validação física da splash/offline/galeria/acessibilidade. Não declarar a moldura corrigida antes desse teste.
+
 ## Instalação e preservação
 
 Baixar somente a APK da build registrada, autorizar instalação dessa origem quando Android solicitar e abrir pelo launcher. Não é preciso desinstalar ou limpar Expo Go. A APK usa sandbox e SQLite próprios: desejos/fotos no Expo Go não migram automaticamente e ficam preservados lá; a instalação nova pode começar vazia. Não copiar arquivos privados do Expo Go e não implementar sincronização/backup nesta fase. Se já houver app independente, não desinstalar nem substituir antes de conferir assinatura e preservação.
@@ -65,4 +76,4 @@ Baixar somente a APK da build registrada, autorizar instalação dessa origem qu
 
 ## Integração
 
-PR da Fase 6 deve permanecer aberto sem merge. main e PR #5 não modificados. APK aguarda confirmação de assinatura; splash e título aguardam execução física; integração exige autorização explícita.
+PR da Fase 6 deve permanecer aberto sem merge. main e PR #5 não modificados. APK concluída e verificada como arquivo; splash, título e funcionamento instalado aguardam execução física; integração exige autorização explícita.
