@@ -5,7 +5,7 @@
 Base: main 29dea24, merge aprovado do PR #7. Branch: feature/android-preview-splash.
 A Fase 5/5.1 foi aprovada fisicamente pelo proprietário conforme solicitação desta fase; isso não valida a nova APK.
 
-**APK ainda não gerada.** EAS CLI 27.10.0 disponível, Node 24.22.1; eas whoami informa Not logged in. eas config exige conta. Não foi enviada build, criada credencial, associado projeto EAS ou aceito custo. Build ID, commit de build e link APK: pendentes.
+**APK ainda não gerada.** EAS CLI 27.10.0, Node 24.22.1. Login confirmado na conta danielsln. Após autorização explícita, criado e vinculado @danielsln/wish (projectId público dea8d846-f32c-41e2-bf98-2a20f6fbe3d1). eas config preview Android aprovado, sem variáveis remotas de ambiente configuradas. Consulta de plano/cota por métodos oficiais do EAS: Free, 0/15 builds Android usadas, período até 01/12/2026 UTC (cota pode mudar). Nenhum custo aceito. Aguardando confirmação da geração gerenciada de assinatura e inexistência de APK anterior. Build ID, commit de build e link APK: pendentes.
 
 ## Configuração auditada
 
@@ -13,7 +13,7 @@ A Fase 5/5.1 foi aprovada fisicamente pelo proprietário conforme solicitação 
 - Expo SDK 58; eas.json usa appVersionSource local.
 - preview: distribution internal, android.buildType apk, developmentClient false explícito. Objetivo: release com bundle incluído, sem Metro/Expo Go, sem publicação Play Store.
 - Nenhum APK/AAB no Git; padrões já ignorados, assim como keystores, credentials.json, variáveis privadas e bancos.
-- app.json não foi alterado; sem projeto EAS vinculado no extra atualmente.
+- app.json recebeu somente owner danielsln e extra.eas.projectId público para associar o projeto autorizado. Splash/ícones, versão e package preservados.
 
 ## Auditoria visual e diferenças de inicialização
 
@@ -65,4 +65,4 @@ Baixar somente a APK da build registrada, autorizar instalação dessa origem qu
 
 ## Integração
 
-PR da Fase 6 deve permanecer aberto sem merge. main e PR #5 não modificados. APK e splash aguardam conta Expo e execução física; integração exige autorização explícita.
+PR da Fase 6 deve permanecer aberto sem merge. main e PR #5 não modificados. APK aguarda confirmação de assinatura; splash e título aguardam execução física; integração exige autorização explícita.

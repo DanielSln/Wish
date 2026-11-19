@@ -108,4 +108,4 @@ Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas po
 
 ### Primeira APK e título compacto
 
-Preparação da Fase 6, auditoria da splash, situação da build e roteiro físico: [docs/PHASE-6-ANDROID-PREVIEW.md](docs/PHASE-6-ANDROID-PREVIEW.md). APK ainda depende de autenticação Expo e validação de conta/credenciais.
+Preparação da Fase 6, auditoria da splash, situação da build e roteiro físico: [docs/PHASE-6-ANDROID-PREVIEW.md](docs/PHASE-6-ANDROID-PREVIEW.md). Conta Expo e perfil preview conferidos; situação da assinatura/build e validação física atualizada no relatório.
