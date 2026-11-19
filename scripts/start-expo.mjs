@@ -11,7 +11,7 @@ try {
   const commit = git('rev-parse','--short','HEAD');
   const source = readFileSync(resolve(root,'src/data/migrations.ts'),'utf8');
   const schema = Number(source.match(/user_version\s*\?\?\s*0\)\s*>\s*(\d+)/)?.[1]);
-  if (schema !== expectedSchema || ![expectedBranch,'feature/expo-go-readiness','main'].includes(branch)) throw new Error(`Prévia recusada: branch ${branch || '(detached)'}, esquema ${schema || 'desconhecido'}. Esperado ${expectedBranch} ou main já integrada, esquema ${expectedSchema}.`);
+  if (schema !== expectedSchema || ![expectedBranch,'feature/android-preview-splash','feature/expo-go-readiness','main'].includes(branch)) throw new Error(`Prévia recusada: branch ${branch || '(detached)'}, esquema ${schema || 'desconhecido'}. Esperado ${expectedBranch} ou main já integrada, esquema ${expectedSchema}.`);
   console.log(`Wish | ${root}\nBranch: ${branch} | Commit: ${commit} | SQLite: v${schema}\nUse este servidor apenas com o catálogo compatível. Não limpe dados para contornar incompatibilidades.`);
   if (process.argv.includes('--check')) process.exit(0);
   const cli = resolve(root,'node_modules/expo/bin/cli');
