@@ -1,5 +1,7 @@
 # Wish
 
+Fases 5/5.1 em revisão: troca manual de imagem, galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
+
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
 ## Executar no Android com Expo Go
@@ -10,7 +12,7 @@ Recomendado: Node.js 24 LTS, npm, Git e Expo Go Android compatível com **SDK 58
 git clone https://github.com/DanielSln/Wish.git
 cd Wish
 git fetch origin
-git switch --track origin/feature/expo-go-readiness
+git switch --track origin/feature/product-images-ux
 npm ci
 npm start -- --go
 ```

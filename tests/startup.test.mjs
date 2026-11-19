@@ -15,5 +15,6 @@ test('startup guard rejects old schema or wrong branch and accepts compatible ma
   schema(2);assert.equal(run().status,1);schema(4);assert.equal(run().status,0);
   git('switch','-c','feature/other');assert.equal(run().status,1);
   git('switch','-c','feature/expo-go-readiness');assert.equal(run().status,0);
+  git('switch','-c','feature/product-images-ux');assert.equal(run().status,0);
  }finally{rmSync(root,{recursive:true,force:true})}
 });
