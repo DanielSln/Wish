@@ -112,4 +112,4 @@ Preparação da Fase 6, auditoria da splash, situação da build e roteiro físi
 
 ### Fase 6.1 — ofertas e interface compacta
 
-[Relatório, backup v5 autorizado e roteiro físico](docs/PHASE-6-1-REFINEMENTS.md). Cadastro manual de ofertas por desejo, sem busca automática ou garantia de preço atual. A APK anterior não contém esta fase; nova build depende de autorização. Não abrir o banco v5 com código v4.
+[Relatório, backup v5 autorizado e roteiro físico](docs/PHASE-6-1-REFINEMENTS.md). Cadastro manual de ofertas por desejo, sem busca automática ou garantia de preço atual. A [APK v2 autorizada e concluída](docs/PHASE-6-1-APK-V2.md) inclui esta fase; instalar sobre a v1 sem desinstalar. Validação física da v5 permanece pendente. Não abrir o banco v5 com código v4.

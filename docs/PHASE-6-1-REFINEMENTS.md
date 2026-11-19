@@ -4,7 +4,7 @@
 
 Continuação de feature/android-preview-splash e PR #8, sem nova branch/PR, merge ou alteração de main/PR #5. O proprietário informou aprovação física 7/7 da primeira APK da Fase 6: splash nos temas claro/escuro, sem moldura cinza, independência de Metro/Expo Go, título/expansão, SQLite e fotos. Isso não valida as alterações desta fase.
 
-Em resposta à proposta [de persistência](PHASE-6-1-OFFERS-PROPOSAL.md), o proprietário autorizou explicitamente SQLite v5 com backup e ofertas manuais. Nenhuma nova build EAS foi iniciada. Não houve acesso ao banco do celular. Migrações executadas nesta sessão somente em catálogos isolados de teste. As duas capturas mencionadas na solicitação não estavam anexadas ao texto; foram usados o código e os problemas descritos, além de capturas próprias com fixtures.
+Em resposta à proposta [de persistência](PHASE-6-1-OFFERS-PROPOSAL.md), o proprietário autorizou explicitamente SQLite v5 com backup e ofertas manuais. Após autorização posterior foi gerada uma única APK v2; [resultado, assinatura, cota e instalação](PHASE-6-1-APK-V2.md). Não houve acesso ao banco do celular. Migrações executadas nesta sessão somente em catálogos isolados de teste. As duas capturas mencionadas na solicitação não estavam anexadas ao texto; foram usados o código e os problemas descritos, além de capturas próprias com fixtures.
 
 ## Interface
 
@@ -59,10 +59,10 @@ Interface: wishlist.tsx, expandable-text.tsx, product-image.tsx, ui.tsx, priorit
 Ofertas/dados: domain/offers.ts, components/product-offers.tsx, data/repository.ts, migrations.ts, initialize-database.ts, database-snapshot.ts, app/_layout.tsx e scripts/start-expo.mjs (branch/guard v5).
 Testes: offers.test.mjs, products.test.mjs, image-management.test.mjs, startup.test.mjs e ui/phase61.cjs. Documentos: proposta, este relatório e README.
 
-## Validação física e próxima APK — autorização pendente
+## Validação física da APK v2 — pendente
 
-A APK Fase 6 publicada não contém estas mudanças. Não houve build EAS extra nesta fase. Para instalar sobre a anterior, futura build deve reutilizar a assinatura gerenciada e com.danielsln.wish; incrementar versionCode de 1 para 2 antes de compilá-la. Não desinstalar app atual. Plano/cota gratuita devem ser reconsultados no momento; cada nova build consome cota, sem aceitar cobrança/upgrade. Aguardar revisão e autorização explícita para compilar.
+A APK original da Fase 6 não contém estas mudanças. A APK v2, autorizada posteriormente, foi concluída com versionCode 2 e certificado igual à v1; instruções no relatório de build. Instalar por cima sem desinstalar. Qualquer nova tentativa continua exigindo autorização e consulta de cota; não aceitar cobrança/upgrade.
 
 Roteiro: preservar app instalado; atualizar sem desinstalar; conferir backup e passagem v4→v5, todos os desejos/fotos/notas/temas/comprados e reabertura offline. Testar hero/lista em tela pequena, título longo expandir/recolher, fonte máxima e temas. Categorias criar/renomear com teclado aberto/fechado, nomes 1–60 caracteres, salvar/cancelar, gestos/botões. Ofertas vazio/uma/várias/mesmo preço, PIX separado, preço/link inválidos, confirmar variante, cancelar edição/remoção, salvar/reabrir e link exato; conferir que preço original e imagens não mudaram. Repetir splash clara/escura apenas como regressão: arquivos W/splash não foram alterados.
 
-Manter PR #8 aberto, sem merge. Decisão pendente: nova APK e validação física; migração/CRUD já autorizados. Não afirmar comparação automática ou preços atuais.
+Manter PR #8 aberto, sem merge. Pendência: validação física da APK v2; migração/CRUD e uma build já autorizados. Não afirmar comparação automática ou preços atuais.
