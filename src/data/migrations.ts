@@ -10,11 +10,17 @@ export const defaultCategories = [
   ['c915bd16-02ef-4bbd-9de9-04c431012002', 'Tecnologia'],
   ['c915bd16-02ef-4bbd-9de9-04c431012003', 'Roupas'],
 ];
-export async function migrate(db: Database) {
+export async function migrate(db: Database, beforeUpgrade?: () => Promise<string>) {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
   const version = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-  if ((version?.user_version ?? 0) > 4) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
+  if ((version?.user_version ?? 0) > 5) throw new Error('Este banco foi criado por uma versão mais recente do Wish. Atualize o aplicativo.');
   if (version?.user_version === 3) throw new Error('Este banco pertence a outra versão de desenvolvimento. Preserve os dados e abra a versão que o criou; não há downgrade automático.');
+  let snapshot: string | undefined;
+  if ((version?.user_version ?? 0) > 0 && (version?.user_version ?? 0) < 5) {
+    if (!beforeUpgrade) throw new Error('Backup obrigatório antes de atualizar o catálogo.');
+    snapshot = await beforeUpgrade();
+    if (!snapshot) throw new Error('Backup não confirmado; banco preservado.');
+  }
   if ((version?.user_version ?? 0) === 0) {
     // Runs before screens mount, so no other query can join this transaction.
     await db.withTransactionAsync(async () => {
@@ -51,6 +57,22 @@ export async function migrate(db: Database) {
   if ((version?.user_version ?? 0) < 4) {
     await db.withTransactionAsync(async () => {
       await db.execAsync("ALTER TABLE products ADD COLUMN personal_notes TEXT NOT NULL DEFAULT ''; ALTER TABLE products ADD COLUMN offer_details TEXT NOT NULL DEFAULT ''; PRAGMA user_version = 4;");
+    });
+  }
+  if ((version?.user_version ?? 0) < 5) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`CREATE TABLE product_offers (
+        id TEXT PRIMARY KEY NOT NULL,
+        product_id TEXT NOT NULL REFERENCES products(id),
+        store TEXT NOT NULL CHECK(length(trim(store)) BETWEEN 1 AND 160),
+        price_cents INTEGER NOT NULL CHECK(typeof(price_cents)='integer' AND price_cents > 0 AND price_cents <= 99999999999),
+        url TEXT NOT NULL, condition TEXT NOT NULL DEFAULT '',
+        conditional INTEGER NOT NULL DEFAULT 0 CHECK(conditional IN (0,1)),
+        recorded_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, deleted_at TEXT
+      );
+      CREATE INDEX product_offers_price ON product_offers(product_id,conditional,price_cents) WHERE deleted_at IS NULL;`);
+      if (snapshot) await db.runAsync('INSERT INTO app_settings(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value','pre_v5_backup_name',snapshot);
+      await db.execAsync('PRAGMA user_version = 5');
     });
   }
 }
