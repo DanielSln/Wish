@@ -4,7 +4,7 @@ import { useUI } from './ui';
 type TextVariant = 'body' | 'title';
 function MeasuredText({ text, label, variant }: { text: string; label: string; variant: TextVariant }) {
   const { styles, colors } = useUI();
-  const textStyle = variant === 'title' ? [styles.heading, { fontSize: 22, lineHeight: 28, letterSpacing: -0.3 }] : styles.body;
+  const textStyle = variant === 'title' ? [styles.heading, { fontSize: 19, lineHeight: 25, letterSpacing: -0.3 }] : styles.body;
   const [expanded, setExpanded] = useState(false);
   const [fullHeight, setFullHeight] = useState(0);
   const [collapsedHeight, setCollapsedHeight] = useState(0);

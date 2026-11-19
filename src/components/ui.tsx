@@ -23,8 +23,8 @@ export function Button({ title, onPress, disabled, style, variant = 'primary' }:
   const { colors: c, styles: s } = useUI();
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [s.button, variant === 'secondary' && { backgroundColor: c.soft }, variant === 'danger' && { backgroundColor: c.dangerBg }, style, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}><Text style={[s.buttonText, variant === 'secondary' && { color: c.text }, variant === 'danger' && { color: c.error }]}>{title}</Text></Pressable>;
 }
-export function Chip({ title, active, onPress }: { title: string; active?: boolean; onPress: () => void }) {
+export function Chip({ title, active, onPress, color }: { title: string; active?: boolean; color?: string; onPress: () => void }) {
   const { colors: c, styles: s } = useUI();
   const webSelection = Platform.OS === 'web' ? { 'aria-pressed': !!active } : {};
-  return <Pressable {...webSelection} accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress} style={[s.chip, active && { backgroundColor: c.soft, borderColor: c.muted }]}><Text style={{ color: active ? c.text : c.muted, fontWeight: active ? '600' : '400' }}>{title}</Text></Pressable>;
+  return <Pressable {...webSelection} accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress} style={[s.chip, active && { backgroundColor: c.soft, borderColor: c.muted }]}><Text style={{ color: color ?? (active ? c.text : c.muted), fontWeight: active ? '600' : '400' }}>{title}</Text></Pressable>;
 }
