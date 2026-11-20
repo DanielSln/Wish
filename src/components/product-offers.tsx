@@ -1,13 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Linking, Switch, Text, TextInput, View } from 'react-native';
 import { useProducts } from '@/data/use-products';
 import { orderedOffers, validateOffer, type Offer } from '@/domain/offers';
 import { money, parsePrice, type Product } from '@/domain/product';
+import { Disclosure } from './disclosure';
 import { Button, useUI } from './ui';
 import { KeyboardDialog } from './keyboard-dialog';
 import { ExpandableText } from './expandable-text';
-export function ProductOffers({ product, disabled=false }: { product: Product; disabled?: boolean }) {
+export function ProductOffers({ product, disabled=false, actions }: { product: Product; disabled?: boolean; actions?: ReactNode }) {
   const repo=useProducts(); const {styles:s,colors:c}=useUI();
   const [offers,setOffers]=useState<Offer[]>([]); const [reload,setReload]=useState(0);
   const [loading,setLoading]=useState(true); const [error,setError]=useState('');
@@ -50,16 +51,23 @@ export function ProductOffers({ product, disabled=false }: { product: Product; d
     </View>;
   }
   return <View style={{gap:8}}>
-    <Text style={s.heading}>Menores preços registrados</Text>
-    <Text style={[s.body,{fontSize:12}]}>Valores que você registrou para este desejo. Sem busca automática ou garantia de preço atual.</Text>
+    <Text style={[s.heading,{fontSize:17}]}>Preços registrados</Text>
     {loading?<Text style={s.body}>Carregando ofertas…</Text>:<>
-      {!normal.length&&<Text style={s.body}>{dependent.length?'Nenhuma oferta sem condição registrada.':'Nenhuma oferta registrada para comparar.'}</Text>}
-      {normal.length===1&&<Text style={[s.body,{fontSize:12}]}>Uma oferta registrada; ainda não há comparação entre lojas.</Text>}{normal.map(row)}
-      {!!dependent.length&&<><Text style={s.label}>Preços condicionados — fora da classificação acima</Text>{dependent.map(row)}</>}
+      {normal.length>0&&<Text style={{color:c.primary,fontSize:19,fontWeight:'700'}}>Menor sem condição: {money(normal[0].price_cents)}</Text>}
+      {dependent.length>0&&<Text style={s.body}>Menor condicionado: {money(dependent[0].price_cents)} — consulte as condições.</Text>}
+      {!valid.length&&<Text style={s.body}>Nenhuma oferta registrada.</Text>}
+      {normal.length===1&&!dependent.length&&<Text style={[s.body,{fontSize:12}]}>Uma oferta; sem comparação entre lojas.</Text>}
     </>}
+    {product.price_cents!==null&&<Text style={[s.body,{fontSize:13}]}>Referência do desejo: {money(product.price_cents)} · não verificada, fora das ofertas.</Text>}
+    <Text style={[s.body,{fontSize:12}]}>Registros manuais, não cotações em tempo real.</Text>
     {!!error&&<><Text accessibilityRole="alert" style={s.error}>{error}</Text><Button title="Tentar novamente" variant="secondary" onPress={()=>setReload(v=>v+1)}/></>}
-    {product.price_cents!==null&&<View style={{gap:3}}><Text style={s.label}>Referência do desejo: {money(product.price_cents)}</Text><Text style={[s.body,{fontSize:12}]}>Preço já cadastrado, sem data própria de verificação. Fora da comparação; pode ter condições descritas abaixo.</Text></View>}
+    {actions}
+    {!!valid.length&&<Disclosure title={`Ofertas por loja (${valid.length})`}>
+      {!!normal.length&&<Text style={s.label}>Sem condição</Text>}{normal.map(row)}
+      {!!dependent.length&&<><Text style={s.label}>Preços condicionados — classificação separada</Text>{dependent.map(row)}</>}
+    </Disclosure>}
     <Button title="Registrar oferta de uma loja" variant="secondary" disabled={disabled||busy||loading} onPress={()=>edit(null)}/>
+
     <KeyboardDialog visible={editing!==undefined} onClose={()=>{if(!busy)setEditing(undefined)}}><View style={s.card}>
       <Text style={s.heading}>{editing?'Editar oferta':'Registrar oferta'}</Text><Text style={s.body}>{product.name}</Text>
       <Text style={[s.body,{fontSize:12}]}>Confira o mesmo modelo, capacidade, cor, kit e estado do produto. Não use valores de produtos semelhantes.</Text>

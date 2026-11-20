@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { fetch as expoFetch } from 'expo/fetch';
-import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
+import { ImportPriceSummary } from '@/components/import-price-summary';
+import { Disclosure } from '@/components/disclosure';
+import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
 import { ProductForm } from '@/components/product-form';
 import { ExpandableText } from '@/components/expandable-text';
 import { ProductImage } from '@/components/product-image';
@@ -54,11 +57,12 @@ export default function ImportScreen() {
     setManualNotice(draft.original_url ? 'Complete os dados do desejo. O link da loja foi preservado.' : 'Você pode cadastrar manualmente sem usar o endereço inválido.');
     setInitial(draft);
   }
-  if (initial) return <View style={{flex:1}}>{!!manualNotice&&<Text style={[styles.body,{padding:24,paddingBottom:0}]}>{manualNotice}</Text>}<ProductForm initial={initial} /></View>;
-  return <ScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+  if (initial) return <View style={{flex:1}}>{!!manualNotice&&<Text style={[styles.body,{padding:12,paddingBottom:0}]}>{manualNotice}</Text>}<ProductForm initial={initial} /></View>;
+  return <KeyboardScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content,{gap:12,paddingTop:12}]}>
     <Text style={styles.heading}>Um link, um novo desejo</Text>
-    <Text style={styles.body}>Cole o link HTTPS de um produto. A consulta acessa a loja pela sua conexão e usa apenas os metadados que ela disponibilizar. A prévia é consultada automaticamente após você colar um link compatível. Nada é salvo até você revisar e confirmar.</Text>
-    <Text style={styles.body}>Você pode salvar desejos de qualquer loja com endereço HTTPS válido. A prévia automática usa domínios revisados, incluindo Youcom e links meli.la do Mercado Livre. Nas demais lojas, continue preenchendo os dados com o link preservado.</Text>
+    <Disclosure title="Como funciona a importação"><Text style={styles.body}>Cole o link HTTPS de um produto. A consulta acessa a loja pela sua conexão e usa apenas os metadados que ela disponibilizar. A prévia é consultada automaticamente após você colar um link compatível. Nada é salvo até você revisar e confirmar.</Text>
+    <Text style={styles.body}>Você pode salvar desejos de qualquer loja com endereço HTTPS válido. A prévia automática usa domínios revisados, incluindo Youcom e links meli.la do Mercado Livre. Nas demais lojas, continue preenchendo os dados com o link preservado.</Text></Disclosure>
+    <Text style={styles.body}>Prévia automática pela sua conexão; nada é salvo sem revisão.</Text>
     <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!busy} onChangeText={value => { attempted.current = null; setUrl(value); setPreview(null); setError(''); }} placeholder="https://loja.com.br/produto" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={2048} />
     <Button title={busy ? 'Consultando loja…' : manualOnly ? 'Continuar cadastro' : 'Buscar informações'} disabled={busy || !url.trim()} onPress={() => load()} />
     {manualOnly&&<Text style={styles.body}>A prévia automática não está disponível para este endereço neste cliente. O cadastro continua disponível.</Text>}
@@ -66,12 +70,11 @@ export default function ImportScreen() {
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {preview && <View style={styles.card}>
       <Text style={styles.heading}>Prévia do produto</Text>
-      <ProductImage uri={preview.product.image_url} large />
+      <ProductImage uri={preview.product.image_url} large compact />
       <Text style={styles.heading}>{preview.product.name || 'Informe o nome na revisão'}</Text>
       <Text style={styles.body}>{preview.product.store}</Text>
-      {preview.prices.original_cents !== null && <Text accessibilityLabel={`Preço anterior informado: ${money(preview.prices.original_cents)}`} style={[styles.body, preview.product.price_cents !== null && {textDecorationLine:'line-through'}]}>Preço anterior informado: {money(preview.prices.original_cents)}</Text>}
-      <Text style={styles.heading}>Preço informado pela página: {money(preview.product.price_cents)}</Text>
-      {preview.prices.conditional && <View style={{gap:12}}><Text style={styles.body}>{preview.prices.conditional.label}: {money(preview.prices.conditional.price_cents)}. Depende dessa forma de pagamento.</Text><Button variant="secondary" title="Revisar usando o preço PIX" onPress={() => { const option = preview.prices.conditional!; setInitial({...preview.product,price_cents:option.price_cents,offer_details:(preview.product.offer_details??'')+'\nPreço escolhido na revisão: '+money(option.price_cents)+' — '+option.label+'. Confira as condições na loja.'}); }}/></View>}
+      <ImportPriceSummary prices={preview.prices}/>
+      {preview.prices.conditional && <Button variant="secondary" title="Revisar usando o preço PIX" onPress={() => { const option = preview.prices.conditional!; setInitial({...preview.product,price_cents:option.price_cents,offer_details:(preview.product.offer_details??'')+'\nPreço escolhido na revisão: '+money(option.price_cents)+' — '+option.label+'. Confira as condições na loja.'}); }}/>}
       {preview.prices.coupon && <View style={{gap:8}}><Text style={styles.label}>Cupom anunciado: {preview.prices.coupon.code}</Text>{preview.prices.coupon.percent !== null && <Text style={styles.body}>{preview.prices.coupon.percent}% de desconto anunciado.</Text>}{preview.prices.coupon.amount_cents !== null && <Text style={styles.body}>{money(preview.prices.coupon.amount_cents)} de desconto anunciado.</Text>}{preview.prices.coupon.price_cents !== null && <Text style={styles.body}>Preço anunciado com cupom: {money(preview.prices.coupon.price_cents)} — sujeito às condições.</Text>}<Text style={styles.body}>{preview.prices.coupon.conditions}</Text><Text style={styles.body}>Nenhum cupom foi aplicado. Na revisão, você pode informar manualmente o preço com cupom confirmado por você.</Text></View>}
       {!!preview.product.description && <ExpandableText text={preview.product.description} />}
       <Text style={styles.body}>Origem: {new URL(preview.product.original_url).hostname}</Text>
@@ -80,5 +83,5 @@ export default function ImportScreen() {
     </View>}
     <Text style={styles.body}>Algumas lojas exigem login, carregam os dados por JavaScript ou bloqueiam consultas. Nesses casos, use o cadastro manual. Não há contorno de bloqueios ou atualização automática de preço.</Text>
     <Button title="Preencher manualmente" disabled={busy} onPress={manual} />
-  </ScrollView>;
+  </KeyboardScrollView>;
 }
