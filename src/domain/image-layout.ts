@@ -13,3 +13,12 @@ export function productImagePresentation(width:number,height:number,boxWidth:num
   if(coverScale<=1/density&&retainedArea>=(large?0.9:0.6))return {width:boxWidth,height:boxHeight,resizeMode:'cover' as const};
   return {...fit,resizeMode:'contain' as const};
 }
+
+// expo-image supplies decoded source dimensions consistently on native and web.
+export function imageLoadDimensions(event: unknown): { width: number; height: number } | null {
+  const object = (value: unknown): Record<string, unknown> => value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const payload = object(event);
+  const source = object(payload.source ?? object(payload.nativeEvent).source);
+  const { width, height } = source;
+  return typeof width === 'number' && typeof height === 'number' && Number.isSafeInteger(width) && Number.isSafeInteger(height) && width > 0 && height > 0 && width * height <= 20000000 ? { width, height } : null;
+}
