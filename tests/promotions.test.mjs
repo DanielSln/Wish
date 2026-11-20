@@ -18,12 +18,12 @@ test('Open Graph explicit sale and original are separate and expiry/currency sti
  assert.equal(extractProduct(meta+'<meta property="product:sale_price_dates:end" content="2026-11-14">',source,now).product.price_cents,null);
  assert.equal(extractProduct(page(offer({priceCurrency:'USD'}))+meta,source,now).product.price_cents,null);
 });
-test('coupon final price explicitly declared is shown separately, never subtracted or auto-applied',()=>{
- const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',validThrough:'2026-11-16'})}));assert.equal(r.product.price_cents,10000);assert.equal(r.prices.coupon.code,'PUBLICO15');assert.equal(r.prices.coupon.price_cents,8500);assert.equal(r.prices.coupon.percent,null);assert.match(r.product.offer_details,/PUBLICO15/);
- const alreadyConditional=parse(offer({price:85,priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15'})}));assert.equal(alreadyConditional.product.price_cents,null);
+test('explicit coupon final is selected without calculating or applying a coupon in the store',()=>{
+ const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',validThrough:'2026-11-16'})}));assert.equal(r.product.price_cents,8500);assert.equal(r.prices.coupon.code,'PUBLICO15');assert.equal(r.prices.coupon.price_cents,8500);assert.equal(r.prices.coupon.percent,null);assert.match(r.product.offer_details,/PUBLICO15/);
+ const alreadyConditional=parse(offer({price:85,priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15'})}));assert.equal(alreadyConditional.product.price_cents,8500);
 });
 test('minimum spend, membership and payment conditions never become guaranteed final prices',()=>{
- const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',description:'Somente membros e pagamento elegível.',eligibleTransactionVolume:{minPrice:150,priceCurrency:'BRL'},validForMemberTier:'https://example.test/tier'})}));assert.equal(r.product.price_cents,10000);assert.match(r.prices.coupon.conditions,/Compra mínima/);assert.match(r.prices.coupon.conditions,/elegibilidade/);
+ const r=parse(offer({priceSpecification:spec(85,'SalePrice',{name:'Com cupom PUBLICO15',description:'Somente membros e pagamento elegível.',eligibleTransactionVolume:{minPrice:150,priceCurrency:'BRL'},validForMemberTier:'https://example.test/tier'})}));assert.equal(r.product.price_cents,8500);assert.match(r.prices.coupon.conditions,/Compra mínima/);assert.match(r.prices.coupon.conditions,/elegibilidade/);
  assert.equal(parse(offer({eligibleQuantity:{minValue:2}})).product.price_cents,null);
  assert.equal(parse(offer({price:80,priceSpecification:spec(80,'SalePrice',{description:'Somente PIX'})})).product.price_cents,null);
  assert.equal(parse(offer({price:10,priceSpecification:spec(10,'SalePrice',{priceComponentType:'https://schema.org/Installment'})})).product.price_cents,null);
@@ -42,10 +42,10 @@ test('conflicting sales, absent price, ambiguous offers and expired offers remai
  assert.equal(parse(offer({priceValidUntil:'2026-11-14',priceSpecification:spec(80)})).product.price_cents,null);
 });
 test('KaBuM public embedded data separates previous, ordinary, PIX and public coupon',()=>{
- const r=extractProduct(kabumPage(),kabumSource,now);assert.equal(r.product.price_cents,10000);assert.equal(r.prices.original_cents,15000);assert.deepEqual(r.prices.conditional,{price_cents:8000,label:'À vista no PIX'});assert.equal(r.prices.coupon.code,'TESTE15');assert.equal(r.prices.coupon.percent,15);assert.equal(r.prices.coupon.price_cents,null);assert.match(r.prices.coupon.conditions,/limitados/);assert.equal(r.product.original_url,kabumSource);
+ const r=extractProduct(kabumPage(),kabumSource,now);assert.equal(r.product.price_cents,8000);assert.equal(r.prices.original_cents,15000);assert.deepEqual(r.prices.conditional,{price_cents:8000,label:'À vista no PIX'});assert.equal(r.prices.coupon.code,'TESTE15');assert.equal(r.prices.coupon.percent,15);assert.equal(r.prices.coupon.price_cents,null);assert.match(r.prices.coupon.conditions,/limitados/);assert.equal(r.product.original_url,kabumSource);
 });
 test('percentage coupon is not confused with fixed-value discount and neither is calculated',()=>{
- const r=extractProduct(kabumPage({banner:'Use o cupom FIXO15 e ganhe R$ 15,00 de desconto neste item. Consulte condições.'}),kabumSource,now);assert.equal(r.prices.coupon.amount_cents,1500);assert.equal(r.prices.coupon.percent,null);assert.equal(r.prices.coupon.price_cents,null);assert.equal(r.product.price_cents,10000);
+ const r=extractProduct(kabumPage({banner:'Use o cupom FIXO15 e ganhe R$ 15,00 de desconto neste item. Consulte condições.'}),kabumSource,now);assert.equal(r.prices.coupon.amount_cents,1500);assert.equal(r.prices.coupon.percent,null);assert.equal(r.prices.coupon.price_cents,null);assert.equal(r.product.price_cents,8000);
 });
 test('store adapter rejects other SKU, marketplace, exclusivity, unknown validity and stale campaign',()=>{
  for(const product of [{id:67890},{sellerId:1},{prime:{isLoggedUserExclusive:true}},{offer:{endDate:now/1000-1}},{offer:{startDate:now/1000+1}},{offer:{endDate:'unknown'}},{offer:{login:true}},{available:false}]){
