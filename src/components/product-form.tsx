@@ -1,8 +1,9 @@
+import { KeyboardScrollView } from './keyboard-scroll-view';
 import { KeyboardDialog } from './keyboard-dialog';
 import { ImageEditor } from './image-editor';
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { useProducts } from '@/data/use-products';
 import { type Category, type ProductInput, type Priority, parsePrice, priorityLabels, validateProduct } from '@/domain/product';
 import { Button, Chip, useUI } from './ui';
@@ -65,7 +66,7 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
   }
   if (loading) return <View style={styles.page}><ActivityIndicator color={colors.accent} /></View>;
   if (loadError) return <View style={styles.page}><Text style={styles.error}>{loadError}</Text><Button title="Tentar novamente" onPress={() => setRetry(r => r + 1)} /></View>;
-  return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+  return <View style={{flex:1}}><KeyboardScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
     <Text style={styles.heading}>{id ? 'Seu desejo, do seu jeito' : 'O que você quer conquistar?'}</Text>
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {!!input.image_url && <ProductImage uri={input.image_url} large />}
@@ -87,5 +88,5 @@ export function ProductForm({ id, initial, onSaved }: { id?: string; initial?: P
     {!!input.notes&&<View><Text style={styles.label}>Texto preservado de versões anteriores</Text><Text style={styles.body}>A origem deste texto não foi classificada automaticamente.</Text><ExpandableText text={input.notes} label="texto anterior"/></View>}
     </View>}
     <Button title={busy ? 'Salvando…' : 'Salvar desejo'} disabled={busy} onPress={save} />
-  </ScrollView><KeyboardDialog visible={creatingCategory} onClose={()=>{if(!busy)setCreatingCategory(false)}}><View style={styles.card}><Text style={styles.heading}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60}/>{!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Salvar categoria" disabled={busy||!newCategory.trim()} onPress={addCategory}/><Button title="Cancelar" variant="secondary" disabled={busy} onPress={()=>{setCreatingCategory(false);setError('')}}/></View></KeyboardDialog></KeyboardAvoidingView>;
+  </KeyboardScrollView><KeyboardDialog visible={creatingCategory} onClose={()=>{if(!busy)setCreatingCategory(false)}}><View style={styles.card}><Text style={styles.heading}>Nova categoria</Text><TextInput accessibilityLabel="Nome da nova categoria" editable={!busy} style={styles.input} placeholder="Ex.: Livros" placeholderTextColor={colors.muted} value={newCategory} onChangeText={setNewCategory} maxLength={60}/>{!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Salvar categoria" disabled={busy||!newCategory.trim()} onPress={addCategory}/><Button title="Cancelar" variant="secondary" disabled={busy} onPress={()=>{setCreatingCategory(false);setError('')}}/></View></KeyboardDialog></View>;
 }
