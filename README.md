@@ -1,6 +1,6 @@
 # Wish
 
-Fases 5/5.1 em revisão: troca manual de imagem, galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
+Fase 6.2 em revisão na branch `feature/android-preview-splash` (PR #8): telas compactas, importação com ajuste local de teclado, preços PIX e ofertas expansíveis. A APK v2 existente contém a Fase 6.1; não foi gerada APK desta fase. Imagens mantêm galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
@@ -12,14 +12,14 @@ Recomendado: Node.js 24 LTS, npm, Git e Expo Go Android compatível com **SDK 58
 git clone https://github.com/DanielSln/Wish.git
 cd Wish
 git fetch origin
-git switch --track origin/feature/product-images-ux
+git switch --track origin/feature/android-preview-splash
 npm ci
 npm start -- --go
 ```
 
-Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
+Esta é a branch de revisão atual (PR #8). Não alterne para `main` ou branches anteriores com catálogo v5 sem confirmar compatibilidade; esta fase não faz merge. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
-Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
+Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. A [APK preview v2](docs/PHASE-6-1-APK-V2.md) já foi gerada; Supabase permanece adiado; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
 Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seguro (localhost ou HTTPS), WebAssembly, SharedArrayBuffer e dos cabeçalhos COOP/COEP configurados em metro.config.js. Em hospedagem, os mesmos cabeçalhos precisam ser enviados pelo servidor. Dados de navegador e celular ficam em bancos separados.
 
@@ -42,7 +42,7 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 `src/components/`: formulário, imagem e elementos visuais compartilhados.
 `src/app/products/`: rotas de cadastro, edição e detalhes.
 
-Banco wish.db, esquema v4 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
+Banco wish.db, esquema v5 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v5: product_offers, aditiva e com backup prévio verificado; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
 ## Fase 3 — Importação por link
 
@@ -86,7 +86,7 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 
 ## Testar em Android real
 
-Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
+Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A configuração atual e a APK v2 estão em `feature/android-preview-splash`, PR #8; [resultado e instalação](docs/PHASE-6-1-APK-V2.md). Não gerar outra build sem autorização.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
 
@@ -112,4 +112,8 @@ Preparação da Fase 6, auditoria da splash, situação da build e roteiro físi
 
 ### Fase 6.1 — ofertas e interface compacta
 
-[Relatório, backup v5 autorizado e roteiro físico](docs/PHASE-6-1-REFINEMENTS.md). Cadastro manual de ofertas por desejo, sem busca automática ou garantia de preço atual. A [APK v2 autorizada e concluída](docs/PHASE-6-1-APK-V2.md) inclui esta fase; instalar sobre a v1 sem desinstalar. Validação física da v5 permanece pendente. Não abrir o banco v5 com código v4.
+[Relatório, backup v5 autorizado e roteiro físico](docs/PHASE-6-1-REFINEMENTS.md). Cadastro manual de ofertas por desejo, sem busca automática ou garantia de preço atual. A [APK v2 autorizada e concluída](docs/PHASE-6-1-APK-V2.md) inclui esta fase; instalar sobre a v1 sem desinstalar. O proprietário informou 20 testes físicos aprovados, 3 não realizados e nenhum reprovado na instalação limpa da v2. A migração Android v4→v5 permanece sem validação física. Não abrir o banco v5 com código v4.
+
+### Fase 6.2
+
+[Implementação, testes e pendências](docs/PHASE-6-2-REFINEMENTS.md) · [Pesquisa documental de APIs](docs/phase-6-2-price-api-research.md). Sem nova APK, migração, integração externa ou alteração da identidade Android.
