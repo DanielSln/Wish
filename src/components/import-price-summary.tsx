@@ -3,13 +3,16 @@ import type { PriceEvidence } from '@/services/import-prices';
 import { importPriceSummary } from '@/domain/price-presentation';
 import { money } from '@/domain/product';
 import { useUI } from './ui';
-export function ImportPriceSummary({prices}:{prices:PriceEvidence}) {
-  const {styles,colors}=useUI();const summary=importPriceSummary(prices);
-  return <View style={{gap:5}}>
-    {summary.lowest?<><Text style={styles.label}>Menor valor anunciado sem cupom</Text><Text style={[styles.heading,{color:colors.primary}]}>{money(summary.lowest.price_cents)} — {summary.lowest.label}</Text></>:<Text style={styles.body}>Preço não informado pela página.</Text>}
-    {summary.lowest?.conditional&&summary.current!==null&&<Text style={styles.body}>Outro preço informado: {money(summary.current)}</Text>}
-    {summary.conditional&&!summary.lowest?.conditional&&<Text style={styles.body}>{summary.conditional.label}: {money(summary.conditional.price_cents)}</Text>}
-    {summary.original!==null&&<Text style={[styles.body,{fontSize:13}]}>Preço anterior informado: {money(summary.original)}</Text>}
-    <Text style={[styles.body,{fontSize:12}]}>Valor observado nesta consulta, sujeito às condições e mudanças na loja. Revise antes de salvar.</Text>
+export function ImportPriceSummary({ prices }: { prices: PriceEvidence }) {
+  const { styles, colors } = useUI();
+  const { lowest, original } = importPriceSummary(prices);
+  const coupon = prices.coupon;
+  const label = lowest?.label.split(' — ')[0];
+  return <View style={{ gap: 5 }}>
+    {original !== null && <Text style={[styles.body, { fontSize: 13, textDecorationLine: 'line-through' }]}>{money(original)}</Text>}
+    <Text style={[styles.heading, { color: colors.primary, fontSize: 26 }]}>{money(lowest?.price_cents ?? null)}</Text>
+    {label && <Text style={styles.body}>{label}</Text>}
+    {coupon && <Text selectable style={styles.label}>Cupom: {coupon.code}{coupon.expired ? ' — validade não confirmada' : ''}</Text>}
+    {coupon && !coupon.expired && coupon.price_cents === null && <Text style={styles.body}>Preço final com cupom não confirmado.</Text>}
   </View>;
 }

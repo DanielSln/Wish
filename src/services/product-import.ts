@@ -1,3 +1,5 @@
+import { importPriceSummary } from '../domain/price-presentation.ts';
+import { money } from '../domain/product.ts';
 import { selectProductImage } from './product-images.ts';
 import { extractPrices, type PriceEvidence } from './import-prices.ts';
 import type { ProductInput } from '../domain/product.ts';
@@ -108,16 +110,17 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
   if (!name && !products.length) throw new ProductMetadataUnavailable();
   if (!products.length && (new URL(source).pathname === '/' || meta['og:type']?.toLowerCase() === 'website')) throw new ProductMetadataUnavailable();
   const prices = extractPrices(item, meta, source, now, nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
-  const knownPrice = prices.current_cents;
+  const selected = importPriceSummary(prices).lowest;
+  const knownPrice = selected?.price_cents ?? null;
   const image = selectProductImage(item.image, imageMetas, (markup.match(/<img\b[^>]*>/gi) ?? []).map(attributes), source, name, value => imageUrl(value, source));
-  if (!name && !image && knownPrice === null) throw new ProductMetadataUnavailable();
+  if (!products.length && !name && !image && knownPrice === null) throw new ProductMetadataUnavailable();
   const product: ImportedProduct = {
     name,
     description: text(item.description, 10000) || text(meta['og:description'] ?? meta.description, 10000),
     image_url: image,
     price_cents: knownPrice,
     notes: '',
-    offer_details: prices.notes,
+    offer_details: [prices.notes, selected ? `Preço selecionado: ${money(selected.price_cents)} — ${selected.label}.` : 'Preço não confirmado.', `Origem: ${source}`, `Consulta: ${new Date(now).toISOString()}`, ...prices.warnings].filter(Boolean).join('\n'),
     category_hint: text(item.category, 160),
     store: text(meta['og:site_name'], 160) || new URL(source).hostname.slice(0, 160),
     original_url: source,
@@ -125,7 +128,7 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
   return { product, prices, warnings: [
     'Confira os dados na loja antes de salvar. O preço pode variar por vendedor, variante, frete ou promoção.',
     ...prices.warnings,
-    ...(!name ? ['O nome não foi informado pela página. Preencha-o na revisão.'] : []),
+    ...(!name ? ['O nome não foi informado pela página. Preencha-o para desejar.'] : []),
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
     ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
   ] };

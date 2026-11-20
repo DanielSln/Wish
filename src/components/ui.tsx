@@ -1,4 +1,5 @@
-import { StyleSheet, Text, Pressable, Platform, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, Text, Pressable, Platform, type StyleProp, type ViewStyle, View } from 'react-native';
+import type { ReactNode } from 'react';
 import { useAppearance } from '@/theme/provider';
 import { palettes, type Palette } from '@/theme/palette';
 const buildStyles = (c: Palette) => StyleSheet.create({
@@ -19,9 +20,9 @@ const buildStyles = (c: Palette) => StyleSheet.create({
 });
 const sheets = { light: buildStyles(palettes.light), dark: buildStyles(palettes.dark) };
 export function useUI() { const { colors, mode } = useAppearance(); return { colors, styles: sheets[mode] }; }
-export function Button({ title, onPress, disabled, style, variant = 'primary' }: { title: string; onPress: () => void; disabled?: boolean; style?: StyleProp<ViewStyle>; variant?: 'primary' | 'secondary' | 'danger' }) {
+export function Button({ title, onPress, disabled, style, variant = 'primary', icon }: { icon?: ReactNode; title: string; onPress: () => void; disabled?: boolean; style?: StyleProp<ViewStyle>; variant?: 'primary' | 'secondary' | 'danger' }) {
   const { colors: c, styles: s } = useUI();
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [s.button, variant === 'secondary' && { backgroundColor: c.soft }, variant === 'danger' && { backgroundColor: c.dangerBg }, style, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}><Text style={[s.buttonText, variant === 'secondary' && { color: c.text }, variant === 'danger' && { color: c.error }]}>{title}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} style={({ pressed }) => [s.button, variant === 'secondary' && { backgroundColor: c.soft }, variant === 'danger' && { backgroundColor: c.dangerBg }, style, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flexShrink: 1 }}>{icon}<Text style={[s.buttonText, { flexShrink: 1, textAlign: 'center' }, variant === 'secondary' && { color: c.text }, variant === 'danger' && { color: c.error }]}>{title}</Text></View></Pressable>;
 }
 export function Chip({ title, active, onPress, color }: { title: string; active?: boolean; color?: string; onPress: () => void }) {
   const { colors: c, styles: s } = useUI();
