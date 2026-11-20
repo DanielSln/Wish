@@ -10,7 +10,7 @@ const assert=require('node:assert/strict');
   const long=Array.from({length:18},(_,i)=>`Linha ${i+1} — conteúdo de teste com acentos e detalhes preservados.`).join('\n');
   const descriptions={short,medium,long};const base=process.env.WISH_TEST_URL||'http://localhost:8093';
   await page.route('https://www.amazon.com.br/expand-*',r=>{const key=new URL(r.request().url()).pathname.replace('/expand-','');return r.fulfill({status:200,contentType:'text/html',headers:{'Access-Control-Allow-Origin':'*'},body:'<script type="application/ld+json">'+JSON.stringify({'@type':'Product',name:'Descrição de teste',description:descriptions[key],offers:{price:'129.90',priceCurrency:'BRL'}})+'</script>'})});
-  const content=()=>page.locator('[data-testid="expandable-text-content"]:visible');
+  const content=()=>page.locator('[data-testid="expandable-text-content"]:visible').filter({hasText:'Linha 1 —'});
   const more=()=>page.getByRole('button',{name:'Ver mais: descrição',exact:true});const less=()=>page.getByRole('button',{name:'Ver menos: descrição',exact:true});
   async function preview(key){await page.goto(base+'/products/import?url='+encodeURIComponent('https://www.amazon.com.br/expand-'+key),{timeout:120000});await page.getByRole('button',{name:'Desejar',exact:true}).waitFor({timeout:120000});}
   for (const [key,text] of [['short',short],['medium',medium]]) {await preview(key);const disclosure=page.getByRole('button',{name:'Descrição',exact:true});assert.equal(await disclosure.getAttribute('aria-expanded'),'false');await disclosure.click();assert.equal(await page.getByText(text,{exact:true}).textContent(),text);}

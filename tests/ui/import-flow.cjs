@@ -13,7 +13,7 @@ const assert=require('node:assert/strict');
   const tab=name=>page.getByRole('tab',{name:new RegExp(name)});
   await page.goto(process.env.WISH_TEST_URL||'http://localhost:8093',{timeout:120000});await tab('Adicionar').click({timeout:120000});
   await page.getByRole('textbox',{name:'Link do produto para começar',exact:true}).fill('https://www.amazon.com.br/wish-auto');await page.getByRole('button',{name:'Adicionar por link',exact:true}).click();
-  await page.getByRole('button',{name:'Desejar',exact:true}).waitFor();assert.equal(imported,1);await page.getByLabel('Imagem do produto',{exact:true}).waitFor();await page.getByRole('button',{name:'Descrição',exact:true}).click();await page.getByText('Descrição da página escolhida',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'Desejar',exact:true}).waitFor();assert.equal(imported,1);await page.getByRole('img',{name:'Imagem do produto',exact:true}).waitFor();await page.getByRole('button',{name:'Descrição',exact:true}).click();await page.getByText('Descrição da página escolhida',{exact:true}).waitFor();
   await page.waitForTimeout(1200);assert.equal(imported,1);await page.getByRole('button',{name:'Editar informações',exact:true}).click();
   assert.equal(await page.getByRole('textbox',{name:'Preço conhecido',exact:true}).inputValue(),'89,90');assert.equal(await page.getByRole('textbox',{name:'Descrição',exact:true}).count(),0);
   await page.getByRole('button',{name:'Alta',exact:true}).click();await page.getByRole('textbox',{name:'Nome do produto *',exact:true}).fill('Desejo revisado');
