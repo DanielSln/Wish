@@ -1,6 +1,6 @@
 # Wish
 
-Fase 6.2 em revisão na branch `feature/android-preview-splash` (PR #8): telas compactas, importação com ajuste local de teclado, preços PIX e ofertas expansíveis. A APK v2 existente contém a Fase 6.1; não foi gerada APK desta fase. Imagens mantêm galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
+Fase 6.3 implementada na branch `feature/android-preview-splash` (PR #8 aberto/em rascunho), **pendente de validação**: seleção de preços explícitos com PIX/cupons e cadastro rápido por Desejar. Testes, TypeScript, ESLint, Expo Doctor, navegador e Android foram adiados por instrução do proprietário; nenhum resultado anterior aprova esta fase. A APK preview v3 corresponde ao código anterior (885f779), com 12/12 testes físicos informados pelo proprietário. Nenhuma nova APK foi gerada. Veja [implementação e checklist de retomada](docs/PHASE-6-3-IMPORT.md) e [SerpApi como candidata à Fase 7.0](docs/PHASE-7-SERPAPI-RESEARCH.md). SQLite v5, ofertas e imagens privadas preservados; não alternar para código incompatível com os dados locais.
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
