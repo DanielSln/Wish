@@ -1,12 +1,12 @@
 # Fase 6.3 — importação de preços e cadastro rápido
 
-Status em 20/11/2026: **implementação concluída, pendente de validação**.
+Status em 20/11/2026: **89 testes Node/SQLite e 10 suítes web aprovados; Android físico pendente**. Veja [resultados, correções e limitações](PHASE-6-3-VALIDATION.md).
 Branch exclusiva: feature/android-preview-splash. PR #8 continua aberto/em rascunho, sem merge.
 Base autorizada: 885f77979ce69a4d9345918954530660521b5196.
 
-## Autorização e verificações adiadas
+## Histórico da publicação inicial sem validação
 
-O proprietário autorizou implementar, preparar testes, criar commits e publicar nesta branch, mas determinou adiar TODA execução de testes e validação. Essa instrução prevalece sobre a orientação genérica de AGENTS.md para executar lint/typecheck antes de concluir. Nenhum teste Node/SQLite, TypeScript, ESLint, Expo Doctor, navegador, inspeção visual em execução, bundle, APK ou EAS Build foi executado nesta implementação. Não há resultado de aprovação da Fase 6.3. Leitura do código/diff e conferência Git não equivalem a essas validações.
+Na publicação inicial, o proprietário autorizou implementar, preparar testes, criar commits e publicar nesta branch, mas determinou adiar TODA execução de testes e validação. A sessão posterior autorizou a execução e correção; seus resultados estão no relatório de validação vinculado acima. Essa instrução prevalece sobre a orientação genérica de AGENTS.md para executar lint/typecheck antes de concluir. Nenhum teste Node/SQLite, TypeScript, ESLint, Expo Doctor, navegador, inspeção visual em execução, bundle, APK ou EAS Build foi executado nesta implementação. Não há resultado de aprovação da Fase 6.3. Leitura do código/diff e conferência Git não equivalem a essas validações.
 
 A APK preview v3 instalada continua sendo a versão anterior, versionCode 3. Os 12/12 testes físicos e a atualização v2→v3 sem perda são evidências anteriores informadas pelo proprietário; não validam este código. A migração histórica v4→v5 continua sem validação física.
 
@@ -42,7 +42,7 @@ Implementação: src/services/import-prices.ts; src/services/product-import.ts; 
 
 Testes preparados: tests/phase63-prices.test.mjs; tests/phase63-save.test.mjs; tests/fixtures/phase63-prices.mjs; tests/ui/phase63.cjs. Expectativas Node anteriores e scripts de navegação/importação/descrição/promoções/detalhes/readiness foram adaptados ao novo fluxo; não foram executados. Documentação: este relatório, pesquisa SerpApi e README.
 
-## Retomada — nenhuma linha desta lista foi executada nesta etapa
+## Roteiro original — resultados da execução posterior no relatório de validação
 
 1. Confirmar branch/HEAD/árvore limpa e revisar os commits antes de testar.
 2. Executar npm test; npm run typecheck; npm run lint; npx expo-doctor. O histórico Doctor 19/20 não é aprovação atual nem autorização para atualizar pacotes.
@@ -55,4 +55,4 @@ Testes preparados: tests/phase63-prices.test.mjs; tests/phase63-save.test.mjs; t
 
 ## Limitações restantes
 
-Esta implementação está sem validação automatizada ou visual; erros de compilação, tipos, lint, seletores de teste e comportamento nativo ainda podem existir. As fixtures não são evidência de que a página atual da KaBuM! expõe o preço promocional. Nenhuma nova consulta a lojas/integração foi necessária para esta implementação. Pesquisa SerpApi permanece documental, candidata à Fase 7.0.
+A execução posterior aprovou testes, tipos, lint, exportação e navegador; comportamento nativo ainda exige validação física. Expo Doctor mantém 19/20 por recomendações conhecidas de versões. As fixtures não são evidência de que a página atual da KaBuM! expõe o preço promocional. Nenhuma nova consulta a lojas/integração foi necessária para esta implementação. Pesquisa SerpApi permanece documental, candidata à Fase 7.0.
