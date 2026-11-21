@@ -5,7 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { migrate } from '../src/data/migrations.ts';
+import { migrate as migrateWithBackup } from '../src/data/migrations.ts';
+const migrate = db => migrateWithBackup(db, async () => 'fixture-backup.db');
 import { createRepository } from '../src/data/repository.ts';
 import { parsePrice, validateProduct } from '../src/domain/product.ts';
 import { resolveAppearance, palettes } from '../src/theme/palette.ts';
@@ -55,7 +56,7 @@ test('SQLite: migrate, create, edit, categories, search, sorting, status, deleti
     await migrate(db); assert.equal((await repo.list()).length, 2);
     raw.close(); raw = new DatabaseSync(path); db = adapter(raw); await migrate(db); repo = createRepository(db, randomUUID);
     assert.equal((await repo.list()).length, 2); assert.equal((await repo.get(a)).notes, 'Nova anotação'); assert.equal((await repo.categories()).length, 4);
-    raw.exec('PRAGMA user_version = 5'); await assert.rejects(migrate(db), /mais recente/);
+    raw.exec('PRAGMA user_version = 6'); await assert.rejects(migrate(db), /mais recente/);
     assert.equal(raw.prepare('SELECT count(*) AS n FROM products').get().n, 3);
   } finally { raw.close(); rmSync(dir, { recursive: true, force: true }); }
 });
@@ -120,13 +121,13 @@ test('v1 to v2 migration preserves products/categories and rolls back settings f
   try {
     const db = adapter(raw); await migrate(db); const repo = createRepository(db, randomUUID);
     const id = await repo.save(input((await repo.categories())[0].id));
-    raw.exec('DROP TABLE app_settings; ALTER TABLE products DROP COLUMN personal_notes; ALTER TABLE products DROP COLUMN offer_details; PRAGMA user_version=1');
+    raw.exec('DROP TABLE product_offers; DROP TABLE app_settings; ALTER TABLE products DROP COLUMN personal_notes; ALTER TABLE products DROP COLUMN offer_details; PRAGMA user_version=1');
     const fail = { ...db, execAsync: async sql => { if (sql.includes('CREATE TABLE app_settings')) throw new Error('disk full'); return db.execAsync(sql); } };
     await assert.rejects(migrate(fail), /disk full/);
     assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 1);
     assert.equal((await repo.get(id)).name, 'Notebook');
     await migrate(db); await migrate(db);
-    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 4);
+    assert.equal(raw.prepare('PRAGMA user_version').get().user_version, 5);
     assert.equal((await repo.categories()).length, 3);
     raw.prepare("INSERT INTO app_settings(key,value) VALUES ('appearance','dark')").run();
     await migrate(db);
@@ -145,7 +146,7 @@ test('appearance respects explicit choice and follows system without changing pr
 
 test('v2 to v4 preserves every legacy note verbatim and adds separate empty personal/commercial fields',async()=>{
  const raw=new DatabaseSync(':memory:');try{const db=adapter(raw);await migrate(db);const repo=createRepository(db,randomUUID);const legacy='Informações da página na importação\nTexto que também pode ter sido escrito pelo usuário.';const id=await repo.save({...input((await repo.categories())[0].id),notes:legacy});
- raw.exec('ALTER TABLE products DROP COLUMN personal_notes; ALTER TABLE products DROP COLUMN offer_details; PRAGMA user_version=2');
+ raw.exec('DROP TABLE product_offers; ALTER TABLE products DROP COLUMN personal_notes; ALTER TABLE products DROP COLUMN offer_details; PRAGMA user_version=2');
  const failed={...db,execAsync:async sql=>{if(sql.includes('ADD COLUMN personal_notes'))return db.execAsync(sql.replace('ALTER TABLE products ADD COLUMN offer_details','INVALID SYNTAX'));return db.execAsync(sql)}};await assert.rejects(migrate(failed),/syntax/);assert.equal(raw.prepare('PRAGMA user_version').get().user_version,2);assert.ok(!raw.prepare('PRAGMA table_info(products)').all().some(c=>c.name==='personal_notes'));await migrate(db);
  const p=await repo.get(id);assert.equal(p.notes,legacy);assert.equal(p.personal_notes,'');assert.equal(p.offer_details,'');assert.equal(p.original_url,'https://example.com/product');
  await repo.savePersonalNotes(id,'Minha nota\nSegunda linha');assert.equal((await repo.get(id)).notes,legacy);assert.equal((await repo.get(id)).personal_notes,'Minha nota\nSegunda linha');
@@ -163,7 +164,7 @@ test('manual Mercado Livre fallback saves and reopens with the exact selected li
   const oldImage='https://img.youcom.com.br/already-saved-thumbnail.webp';
   const id=await repo.save({...input(category),...manualProductFromLink(url),image_url:oldImage,personal_notes:'Minha nota',offer_details:'Oferta revisada'});
   const before=await repo.get(id);await migrate(db);const after=await repo.get(id);
-  assert.equal(raw.prepare('PRAGMA user_version').get().user_version,4);
+  assert.equal(raw.prepare('PRAGMA user_version').get().user_version,5);
   assert.deepEqual(after,before);assert.equal(after.original_url,url);assert.equal(after.image_url,oldImage);
   assert.equal(after.personal_notes,'Minha nota');assert.equal(after.offer_details,'Oferta revisada');
  }finally{raw.close()}

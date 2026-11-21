@@ -15,9 +15,9 @@ test('specific custom categories take precedence without creating a new category
 const final='https://produto.mercadolivre.com.br/MLB-123-fixture';
 const html='<script type="application/ld+json">'+JSON.stringify({'@type':'Product',name:'Monitor de teste',category:'Tecnologia',offers:{price:'99.90',priceCurrency:'BRL'}})+'</script>';
 const response=()=>new Response(html,{headers:{'Content-Type':'text/html'}});
-test('meli.la manually validates each hop and saves the resolved Mercado Livre URL',async()=>{
+test('meli.la manually validates each hop and preserves the original and resolved Mercado Livre URLs',async()=>{
  const calls=[];const r=await importProduct('https://meli.la/fixture',undefined,async(url,options)=>{calls.push(url);assert.equal(options.redirect,'manual');return calls.length===1?new Response('',{status:302,headers:{Location:final}}):response()});
- assert.deepEqual(calls,['https://meli.la/fixture',final]);assert.equal(r.product.original_url,final);assert.equal(r.product.category_hint,'Tecnologia');assert.equal(r.product.notes,'');
+ assert.deepEqual(calls,['https://meli.la/fixture',final]);assert.equal(r.product.original_url,'https://meli.la/fixture');assert.equal(r.resolved_url,final);assert.equal(r.product.category_hint,'Tecnologia');assert.equal(r.product.notes,'');
 });
 test('short links reject private IPs, local hosts, lookalikes and other stores before the next request',async()=>{
  for(const location of ['http://www.mercadolivre.com.br/p','https://127.0.0.1/p','https://169.254.169.254/p','https://[::1]/p','https://localhost/p','https://produto.mercadolivre.com.br.evil.example/p','https://www.amazon.com.br/p','https://user:password@www.mercadolivre.com.br/p']){
@@ -31,7 +31,7 @@ test('cycles, excessive hops, missing locations and opaque browser redirects fai
  await assert.rejects(importProduct('https://meli.la/fixture',undefined,async()=>({status:0,type:'opaqueredirect'})),/navegador/);
  await assert.rejects(importProduct('https://meli.la/fixture',undefined,async()=>new Response('',{status:403})),/HTTP 403/);
 });
-test('resolved pages retain size limits and normal store redirects remain forbidden',async()=>{
+test('resolved pages retain size limits and cross-store redirects remain forbidden',async()=>{
  let n=0;await assert.rejects(importProduct('https://meli.la/fixture',undefined,async()=>++n===1?new Response('',{status:302,headers:{Location:final}}):new Response('',{headers:{'Content-Type':'text/html','Content-Length':'2000001'}})),/grande/);
- await assert.rejects(importProduct('https://www.amazon.com.br/product',undefined,async()=>new Response('',{status:302,headers:{Location:final}})),/Redirecionamentos/);
+ await assert.rejects(importProduct('https://www.amazon.com.br/product',undefined,async()=>new Response('',{status:302,headers:{Location:final}})),/destino não autorizado/);
 });
