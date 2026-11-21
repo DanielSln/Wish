@@ -1,8 +1,13 @@
 import { Text, View, type ColorValue } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { useUI } from './ui';
-export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow' | 'edit' | 'image' | 'heart';
+export type IconName = 'home' | 'categories' | 'add' | 'purchased' | 'settings' | 'link' | 'search' | 'arrow' | 'edit' | 'image' | 'heart' | 'back' | 'more' | 'sun' | 'moon' | 'system';
 const symbols = {
+  back: { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' },
+  more: { ios: 'ellipsis', android: 'more_vert', web: 'more_vert' },
+  sun: { ios: 'sun.max', android: 'light_mode', web: 'light_mode' },
+  moon: { ios: 'moon', android: 'dark_mode', web: 'dark_mode' },
+  system: { ios: 'iphone', android: 'smartphone', web: 'smartphone' },
   heart: { ios: 'heart', android: 'favorite_border', web: 'favorite_border' },
   image: { ios: 'photo', android: 'image', web: 'image' },
   edit: { ios: 'pencil', android: 'edit', web: 'edit' },
