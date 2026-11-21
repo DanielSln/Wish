@@ -1,5 +1,7 @@
 # Fase 7.0 — estudo de viabilidade da SerpApi
 
+> Etapa posterior, 21/11/2026: [POC 7.0.1 executada e encerrada](PHASE-7-0-SERPAPI-POC.md), sem integração ao app. Este estudo preserva o estado anterior ao experimento.
+
 Data da pesquisa: **21/11/2026**. Escopo: diagnóstico, documentação e planejamento; **nenhuma integração ou POC executada**. Base inspecionada: `319b077e884cb8cd16a745426f2cb957b9d8e94e`, branch `feature/android-preview-splash`, limpa e sincronizada após fetch. PR #8 aberto, em rascunho, sem merge. Wish 1.0.0 / versionCode 5 / SQLite v5 preservados.
 
 ## Parecer
