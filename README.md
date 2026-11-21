@@ -1,6 +1,6 @@
 # Wish
 
-Fase 6.3 na branch `feature/android-preview-splash` (PR #8 aberto/em rascunho): preços explícitos com PIX/cupons e cadastro rápido por Desejar. **89 testes Node/SQLite e 10 suítes web aprovados**, TypeScript/ESLint/export web aprovados; Expo Doctor 19/20 pelos seis avisos conhecidos. Android físico permanece pendente. Veja [validação e correções](docs/PHASE-6-3-VALIDATION.md) e [arquitetura da importação](docs/PHASE-6-3-IMPORT.md). A APK v3 contém código anterior, não estas correções. Nenhuma APK v4 foi preparada/compilada. SQLite v5 e dependências preservados; não alternar para código incompatível com o catálogo. Cópia nativa do cupom permanece pendente; SerpApi é somente [pesquisa para possível Fase 7.0](docs/PHASE-7-SERPAPI-RESEARCH.md).
+Fase 6.4 na branch `feature/android-preview-splash` (PR #8 aberto/em rascunho): textos compartilhados, escolha de links, redirecionamentos restritos, microdados e cadastro universal compacto, com correção de PIX igual ao preço comum quando explicitamente confirmado. **115 testes Node/SQLite e 11 suítes web aprovados**, TypeScript/ESLint/export web aprovados; Expo Doctor 19/20 pelos seis avisos conhecidos. [Relatório, consultas reais, limites por loja e checklist físico](docs/PHASE-6-4-UNIVERSAL-IMPORT.md). A APK v4 anterior teve 20/22 físicos informados pelo proprietário; esta fase ainda não está em uma nova APK. SQLite v5, dependências e Wish 1.0.0/versionCode4 preservados. Não preparar/compilar v5 nem fazer merge sem autorização. Consulta automática de hosts não revisados permanece desativada por limite de segurança de DNS/IP; cadastro manual HTTPS é universal. Cópia nativa do cupom segue pendente; SerpApi é somente pesquisa futura.
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
 
@@ -104,7 +104,7 @@ Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm ed
 
 ### Cadastro em outras lojas e carregamento
 
-Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas podem seguir com **Continuar cadastro**, mantendo URL/domínio e preenchimento manual; a ausência de prévia não bloqueia salvar. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
+Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas recebem prévia manual compacta com **Desejar**, mantendo URL/domínio e solicitando apenas os dados obrigatórios ausentes. Textos compartilhados e escolha entre vários links são suportados. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
 
 ### Primeira APK e título compacto
 
