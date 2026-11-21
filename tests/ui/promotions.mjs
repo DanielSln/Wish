@@ -10,7 +10,7 @@ try{
  const html=kabumPage({product:{offer:{startDate:Date.now()/1000-3600,endDate:Date.now()/1000+3600,login:false}}});
  await page.route(kabumSource,r=>r.fulfill({status:200,contentType:'text/html',headers:{'Access-Control-Allow-Origin':'*'},body:html}));
  const tab=name=>page.getByRole('tab',{name:new RegExp(name)});await page.goto(process.env.WISH_TEST_URL||'http://localhost:8093',{timeout:120000});await tab('Adicionar').click({timeout:120000});
- await page.getByText('O próximo desejo.',{exact:true}).waitFor();
+ await page.getByText('O próximo desejo',{exact:true}).waitFor();
  assert.ok(await page.evaluate(()=>Array.from(document.querySelectorAll('[dir="auto"]')).some(e=>e.textContent==='Wish'&&e.getBoundingClientRect().width>0)));
  await page.setViewportSize({width:320,height:480});
  const scroll=await page.evaluate(()=>{const e=Array.from(document.querySelectorAll('*')).find(e=>e.getBoundingClientRect().height>0&&['auto','scroll'].includes(getComputedStyle(e).overflowY)&&e.scrollHeight>e.clientHeight+50);if(!e)return null;e.scrollTop=80;return{moved:e.scrollTop>0,indicator:getComputedStyle(e).scrollbarWidth}});assert.ok(scroll?.moved);assert.equal(scroll.indicator,'none');await page.setViewportSize({width:412,height:915});
