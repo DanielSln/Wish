@@ -56,7 +56,7 @@ test('transport respects blocked responses, CORS errors, content limits and canc
   let calls = 0;
   const request = async (input, options) => {
     calls++;
-    assert.equal(input, url); assert.equal(options.credentials, 'omit'); assert.equal(options.redirect, 'error');
+    assert.equal(input, url); assert.equal(options.credentials, 'omit'); assert.equal(options.redirect, 'manual');
     return new Response(json(product), { headers: { 'Content-Type': 'text/html' } });
   };
   assert.equal((await importProduct(url, undefined, request)).product.price_cents, 12990);
@@ -118,7 +118,7 @@ test('stream decoding handles UTF-8 across chunks and releases the transport', a
 });
 
 test('redirect responses and unexpected final URLs never reach the parser', async () => {
-  await assert.rejects(importProduct(url, undefined, async () => new Response('', { status: 302, headers: { Location: 'https://127.0.0.1/private' } })), /Redirecionamentos/);
+  await assert.rejects(importProduct(url, undefined, async () => new Response('', { status: 302, headers: { Location: 'https://127.0.0.1/private' } })), /HTTPS/);
   await assert.rejects(importProduct(url, undefined, async () => ({ redirected: true, status: 200 })), /Redirecionamentos/);
   await assert.rejects(importProduct(url, undefined, async () => ({ ok: true, status: 200, url: 'https://www.kabum.com.br/other' })), /endereço da resposta/);
 });
