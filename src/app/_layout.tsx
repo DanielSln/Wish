@@ -22,7 +22,7 @@ function Navigation() {
     <Stack.Screen name="(tabs)" options={{headerShown:false}} />
     <Stack.Screen name="products/import" options={{title:'Adicionar por link'}} />
     <Stack.Screen name="products/new" options={{title:'Novo desejo'}} />
-    <Stack.Screen name="products/[id]" options={{title:'Seu desejo'}} />
+    <Stack.Screen name="products/[id]" options={{title:''}} />
     <Stack.Screen name="products/edit" options={{title:'Editar desejo'}} />
   </Stack></ThemeProvider>;
 }

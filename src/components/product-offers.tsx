@@ -1,14 +1,15 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Linking, Switch, Text, TextInput, View } from 'react-native';
 import { useProducts } from '@/data/use-products';
 import { orderedOffers, validateOffer, type Offer } from '@/domain/offers';
 import { money, parsePrice, type Product } from '@/domain/product';
 import { Disclosure } from './disclosure';
-import { Button, useUI } from './ui';
+import { Button, TextButton, IconButton, SectionHeading, useUI } from './ui';
+import { Icon } from './brand';
 import { KeyboardDialog } from './keyboard-dialog';
 import { ExpandableText } from './expandable-text';
-export function ProductOffers({ product, disabled=false, actions }: { product: Product; disabled?: boolean; actions?: ReactNode }) {
+export function ProductOffers({ product, disabled=false }: { product: Product; disabled?: boolean }) {
   const repo=useProducts(); const {styles:s,colors:c}=useUI();
   const [offers,setOffers]=useState<Offer[]>([]); const [reload,setReload]=useState(0);
   const [loading,setLoading]=useState(true); const [error,setError]=useState('');
@@ -47,26 +48,21 @@ export function ProductOffers({ product, disabled=false, actions }: { product: P
       {!offer.conditional&&offer.price_cents===lowest&&normal.length>1&&<Text style={{color:c.primary,fontSize:12}}>Menor valor registrado sem condição</Text>}
       <Text style={[s.body,{fontSize:12}]}>Registro manual: {new Date(offer.recorded_at).toLocaleString('pt-BR')}. Não verificado na loja.</Text>
       {!!offer.condition&&<ExpandableText text={offer.condition} label="condições da oferta"/>}
-      <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}><Button title="Ver oferta" variant="secondary" onPress={()=>open(offer)} style={{padding:10}}/><Button title="Editar" variant="secondary" disabled={disabled||busy} onPress={()=>edit(offer)} style={{padding:10}}/><Button title="Remover" variant="secondary" disabled={disabled||busy} onPress={()=>{setFormError('');setRemoving(offer)}} style={{padding:10}}/></View>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}><TextButton title="Ver oferta" onPress={()=>open(offer)}/><TextButton title="Editar" disabled={disabled||busy} onPress={()=>edit(offer)}/><TextButton title="Remover" danger disabled={disabled||busy} onPress={()=>{setFormError('');setRemoving(offer)}}/></View>
     </View>;
   }
   return <View style={{gap:8}}>
-    <Text style={[s.heading,{fontSize:17}]}>Preços registrados</Text>
-    {loading?<Text style={s.body}>Carregando ofertas…</Text>:<>
-      {normal.length>0&&<Text style={{color:c.primary,fontSize:19,fontWeight:'700'}}>Menor sem condição: {money(normal[0].price_cents)}</Text>}
-      {dependent.length>0&&<Text style={s.body}>Menor condicionado: {money(dependent[0].price_cents)} — consulte as condições.</Text>}
-      {!valid.length&&<Text style={s.body}>Nenhuma oferta registrada.</Text>}
-      {normal.length===1&&!dependent.length&&<Text style={[s.body,{fontSize:12}]}>Uma oferta; sem comparação entre lojas.</Text>}
+    <SectionHeading title="Ofertas registradas" action={<IconButton label="Registrar oferta de uma loja" disabled={disabled||busy||loading} onPress={()=>edit(null)}><Icon name="add" color={c.primary} size={22}/></IconButton>}/>
+    {loading&&<Text style={s.body}>Carregando ofertas…</Text>}
+    {!loading&&!valid.length&&<Text style={s.body}>Nenhuma oferta registrada</Text>}
+    {!!valid.length&&<>
+      <Text style={[s.body,{fontSize:13}]}>Registros manuais, não cotações em tempo real.</Text>
+      <Disclosure title={`Ofertas por loja (${valid.length})`}>
+        {!!normal.length&&<><Text style={s.label}>Sem condição</Text><Text style={s.body}>Menor sem condição: {money(normal[0].price_cents)}</Text>{normal.map(row)}</>}
+        {!!dependent.length&&<><Text style={s.label}>Preços condicionados — classificação separada</Text><Text style={s.body}>Menor condicionado: {money(dependent[0].price_cents)} — consulte as condições.</Text>{dependent.map(row)}</>}
+      </Disclosure>
     </>}
-    {product.price_cents!==null&&<Text style={[s.body,{fontSize:13}]}>Referência do desejo: {money(product.price_cents)} · não verificada, fora das ofertas.</Text>}
-    <Text style={[s.body,{fontSize:12}]}>Registros manuais, não cotações em tempo real.</Text>
-    {!!error&&<><Text accessibilityRole="alert" style={s.error}>{error}</Text><Button title="Tentar novamente" variant="secondary" onPress={()=>setReload(v=>v+1)}/></>}
-    {actions}
-    {!!valid.length&&<Disclosure title={`Ofertas por loja (${valid.length})`}>
-      {!!normal.length&&<Text style={s.label}>Sem condição</Text>}{normal.map(row)}
-      {!!dependent.length&&<><Text style={s.label}>Preços condicionados — classificação separada</Text>{dependent.map(row)}</>}
-    </Disclosure>}
-    <Button title="Registrar oferta de uma loja" variant="secondary" disabled={disabled||busy||loading} onPress={()=>edit(null)}/>
+    {!!error&&<><Text accessibilityRole="alert" style={s.error}>{error}</Text><TextButton title="Tentar novamente" onPress={()=>setReload(v=>v+1)}/></>}
 
     <KeyboardDialog visible={editing!==undefined} onClose={()=>{if(!busy)setEditing(undefined)}}><View style={s.card}>
       <Text style={s.heading}>{editing?'Editar oferta':'Registrar oferta'}</Text><Text style={s.body}>{product.name}</Text>

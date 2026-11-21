@@ -1,13 +1,16 @@
 import { useCallback, useState } from 'react';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, Linking, Modal, ScrollView, Text, View } from 'react-native';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Alert, Linking, ScrollView, Text, View } from 'react-native';
 import { useProducts } from '@/data/use-products';
-import { type Product, isHttpUrl, money, priorityLabels } from '@/domain/product';
-import { Button, useUI } from '@/components/ui';
+import { type Product, isHttpUrl, money } from '@/domain/product';
+import { Button, TextButton, IconButton, useUI } from '@/components/ui';
 import { ExpandableText } from '@/components/expandable-text';
 import { Disclosure } from '@/components/disclosure';
 import { ProductOffers } from '@/components/product-offers';
-import { PriorityBadge } from '@/components/priority-badge';
+import { PricePriority } from '@/components/price-priority';
+import { Icon } from '@/components/brand';
+import { KeyboardDialog } from '@/components/keyboard-dialog';
+import { commercialDisplay } from '@/domain/commercial-display';
 import { PersonalNotes } from '@/components/personal-notes';
 import { ProductImage } from '@/components/product-image';
 export default function ProductDetails() {
@@ -15,6 +18,7 @@ export default function ProductDetails() {
   const { id } = useLocalSearchParams<{ id: string }>(); const repo = useProducts();
   const [product, setProduct] = useState<Product | null>(null); const [loading, setLoading] = useState(true);
   const [editingNotes,setEditingNotes]=useState(false);
+  const [menu,setMenu]=useState(false);
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [confirm, setConfirm] = useState(false); const [retry, setRetry] = useState(0);
   useFocusEffect(useCallback(() => {
     void retry; let alive = true; setLoading(true); setError('');
@@ -39,18 +43,26 @@ export default function ProductDetails() {
   }
   if (loading) return <View style={styles.page}><ActivityIndicator color={colors.accent} /></View>;
   if (!product) return <View style={styles.page}><Text style={styles.error}>{error || 'Este produto não está disponível.'}</Text><Button title="Tentar novamente" onPress={() => setRetry(r => r + 1)} /><Button title="Voltar à lista" disabled={editingNotes} onPress={() => router.replace('/')} /></View>;
-  const actions = (<View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}><Button style={{flexGrow:1,flexBasis:180,padding:12}} title={product.status === 'pending' ? 'Marcar como comprado' : 'Reverter para pendente'} disabled={busy||editingNotes} onPress={toggleStatus} />
-    <Button style={{flexGrow:1,flexBasis:140,padding:12}} title="Editar produto" disabled={busy||editingNotes} onPress={() => router.push({ pathname: '/products/edit', params: { id: product.id } })} />
-    {!!product.original_url && <Button style={{flexGrow:1,flexBasis:140,padding:12}} title="Ver na loja" variant="secondary" disabled={busy||editingNotes} onPress={openStore} />}
-    </View>);
-  const rows = [['Categoria',product.category_name],['Prioridade',priorityLabels[product.priority]],['Status',product.status === 'purchased' ? 'Comprado' : 'Pendente'],['Preço desejado',money(product.desired_price_cents)],['Loja',product.store]];
-  return <ScrollView showsVerticalScrollIndicator={false} style={styles.page} contentContainerStyle={[styles.content, { gap: 10, paddingTop: 4 }]}><ProductImage uri={product.image_url} large compact /><ExpandableText key={'name:'+product.id} text={product.name} label="nome do desejo" variant="title" />{!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-    <ProductOffers key={'offers:'+product.id} product={product} disabled={editingNotes||busy} actions={actions}/>
-    {!!product.offer_details&&<Disclosure title="Condições informadas pela loja"><ExpandableText text={product.offer_details} label="ofertas e condições"/></Disclosure>}
-    <Disclosure title="Informações do desejo">{rows.map(([label,value]) => <View key={label} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}><Text style={styles.label}>{label}</Text>{label === 'Prioridade' ? <PriorityBadge priority={product.priority}/> : <Text selectable style={styles.body}>{value || 'Não informado'}</Text>}</View>)}</Disclosure>
-    {!!product.description&&<View style={{gap:5}}><Text style={styles.label}>Descrição</Text><ExpandableText text={product.description}/></View>}
-    <PersonalNotes onEditingChange={setEditingNotes} key={'notes:'+product.id} value={product.personal_notes} legacy={product.notes} onSave={async text=>{await repo.savePersonalNotes(product.id,text);setProduct(await repo.get(product.id));}}/>
-    <Button title="Excluir produto" disabled={busy||editingNotes} onPress={() => setConfirm(true)} variant="danger" /><Button title="Voltar à lista" disabled={editingNotes} onPress={() => router.replace('/')} />
-    <Modal visible={confirm} transparent animationType="fade" onRequestClose={() => { if (!busy) setConfirm(false); }}><View style={{ flex: 1, backgroundColor: '#000B', justifyContent: 'center', padding: 28 }}><View style={styles.card}><Text style={styles.heading}>Excluir este desejo?</Text><Text style={styles.body}>O produto será removido da sua lista. Essa ação não pode ser desfeita pelo aplicativo.</Text><Button title="Cancelar" disabled={busy||editingNotes} onPress={() => setConfirm(false)} /><Button title={busy ? 'Excluindo…' : 'Confirmar exclusão'} disabled={busy||editingNotes} onPress={remove} variant="danger" /></View></View></Modal>
-  </ScrollView>;
+  const commercial=commercialDisplay(product.offer_details,product.price_cents);
+  const locked=busy||editingNotes;
+  return <>
+    <Stack.Screen options={{title:'',headerBackVisible:false,headerLeft:()=> <IconButton label="Voltar à lista" disabled={editingNotes} onPress={()=>router.replace('/')}><Icon name="back" size={23}/></IconButton>,headerRight:()=> <View style={{flexDirection:'row',gap:4}}><IconButton label="Editar produto" disabled={locked} onPress={()=>router.push({pathname:'/products/edit',params:{id:product.id}})}><Icon name="edit" size={22}/></IconButton><IconButton label="Mais ações do desejo" disabled={locked} expanded={menu} onPress={()=>setMenu(true)}><Icon name="more" size={23}/></IconButton></View>}}/>
+    <ScrollView showsVerticalScrollIndicator={false} style={styles.page} contentContainerStyle={[styles.content,{gap:16,paddingTop:4}]}>
+      <View style={{gap:10}}><ProductImage uri={product.image_url} large compact/>
+        {!!product.category_name&&<Text style={[styles.body,{fontSize:13,fontWeight:'600'}]}>{product.category_name}</Text>}
+        <ExpandableText key={'name:'+product.id} text={product.name} label="nome do desejo" variant="title"/>
+        <PricePriority price={product.price_cents} priority={product.priority} detail/>
+        {!!(product.store||commercial.condition)&&<Text style={styles.body}>{[commercial.condition,product.store].filter(Boolean).join(' · ')}</Text>}
+      </View>
+      {!!error&&<Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
+      <View style={{gap:4}}>{isHttpUrl(product.original_url)&&<Button title="Ver na loja" disabled={locked} onPress={openStore}/>}<Button title={product.status==='pending'?'Marcar como comprado':'Reverter para pendente'} variant="secondary" disabled={locked} onPress={toggleStatus} style={{paddingVertical:12}}/></View>
+      <View style={styles.divider}/><ProductOffers key={'offers:'+product.id} product={product} disabled={locked}/>
+      {!!product.description&&<><View style={styles.divider}/><View style={{gap:6}}><Text accessibilityRole="header" style={[styles.heading,{fontSize:17}]}>Descrição</Text><ExpandableText text={product.description}/></View></>}
+      {!!commercial.text&&<><View style={styles.divider}/><Disclosure title="Condições da oferta"><ExpandableText text={commercial.text} label="ofertas e condições"/></Disclosure></>}
+      {product.desired_price_cents!==null&&<><View style={styles.divider}/><Disclosure title="Informações adicionais"><Text style={styles.label}>Preço desejado</Text><Text style={styles.body}>{money(product.desired_price_cents)}</Text></Disclosure></>}
+      <View style={styles.divider}/><PersonalNotes onEditingChange={setEditingNotes} key={'notes:'+product.id} value={product.personal_notes} legacy={product.notes} onSave={async text=>{await repo.savePersonalNotes(product.id,text);setProduct(await repo.get(product.id));}}/>
+    </ScrollView>
+    <KeyboardDialog visible={menu} onClose={()=>setMenu(false)}><View style={styles.card}><Text style={styles.heading}>Ações do desejo</Text><TextButton title="Excluir produto" danger disabled={locked} onPress={()=>{setMenu(false);setConfirm(true)}}/><TextButton title="Cancelar" onPress={()=>setMenu(false)}/></View></KeyboardDialog>
+    <KeyboardDialog visible={confirm} onClose={()=>{if(!busy)setConfirm(false)}}><View style={styles.card}><Text style={styles.heading}>Excluir este desejo?</Text><Text style={styles.body}>O produto será removido da sua lista. Essa ação não pode ser desfeita pelo aplicativo.</Text><Button title="Cancelar" variant="secondary" disabled={locked} onPress={()=>setConfirm(false)}/><Button title={busy?'Excluindo…':'Confirmar exclusão'} disabled={locked} onPress={remove} variant="danger"/></View></KeyboardDialog>
+  </>;
 }
