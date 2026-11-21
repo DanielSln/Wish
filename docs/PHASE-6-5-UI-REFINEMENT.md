@@ -1,4 +1,5 @@
 # Fase 6.5 — consolidação visual do Wish
+> Atualização de encerramento: revisão estética anterior favorável pelo proprietário. A limitação dos rótulos inferiores com fonte ampliada foi corrigida na web, preservando a barra normal. Veja [correção e validação](PHASE-6-5-NAVIGATION-LABELS.md); as capturas e limitações descritas neste relatório abaixo são o registro anterior à correção.
 
 Implementação e revisão em 21/11/2026, exclusivamente em feature/android-preview-splash, PR #8 aberto/em rascunho. Base local/remota conferida limpa: 5a95361991b8e4aa73c664e1ceea3e1fa5578333. Esta fase não está na APK v5: a APK anterior contém a Fase 6.4. Não houve preparação ou compilação de outra APK.
 
