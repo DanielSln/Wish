@@ -1,5 +1,7 @@
 # SerpApi — candidata à Fase 7.0
 
+> Atualização de 21/11/2026: o estudo completo da Fase 7.0 está em [PHASE-7-0-SERPAPI-FEASIBILITY.md](PHASE-7-0-SERPAPI-FEASIBILITY.md). Este arquivo preserva a pesquisa histórica; nenhuma POC foi executada.
+
 Pesquisa da Etapa A consolidada em 20/11/2026. **Somente documentação**; sem conta, chave, integração, assinatura, requisição à API ou prova de conceito.
 
 ## Custo e limites
