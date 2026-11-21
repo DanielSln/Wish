@@ -130,7 +130,7 @@ export function extractPrices(item: Row, meta: Record<string, string>, source: s
       if (regular !== null && cents(p.price, 'BRL') === regular) {
         result.current_cents = regular;
         result.original_cents = cents(prices.oldPrice, 'BRL');
-        if (pix !== null && pix < regular && /à vista no PIX/i.test(visibleText)) {
+        if (pix !== null && pix <= regular && /à vista no PIX/i.test(visibleText)) {
           if (result.conditional && result.conditional.price_cents !== pix || pixSpecs.length && !result.conditional) {
             result.conditional = null;
             result.warnings.push('Fontes de preço PIX conflitantes; confirme o valor manualmente.');
@@ -157,6 +157,7 @@ export function extractPrices(item: Row, meta: Record<string, string>, source: s
       result.warnings.push('Os dados públicos da KaBuM não confirmam uma oferta vigente e sem restrições para este produto. Revise o preço manualmente.');
     }
   }
+  if (offer.priceCurrency && offer.priceCurrency !== 'BRL' || !offers.length && meta['product:price:currency'] && meta['product:price:currency'] !== 'BRL') result.warnings.push('Moeda anunciada: ' + clean(offer.priceCurrency ?? meta['product:price:currency'], 12) + '. Valor não convertido para reais.');
   if (ambiguous) { result.coupon = null; result.coupon_options = []; result.original_cents = null; }
   if (result.coupon) result.warnings.push(result.coupon.expired ? 'O cupom está vencido ou sem validade confirmada; não foi aplicado.' : result.coupon.price_cents === null ? 'Cupom anunciado sem preço final confirmado.' : 'Preço com cupom anunciado pela loja; elegibilidade não verificada.');
   if (result.original_cents !== null && result.current_cents !== null && result.original_cents <= result.current_cents) result.original_cents = null;
