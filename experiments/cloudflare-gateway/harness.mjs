@@ -18,9 +18,10 @@ export async function runtime(options = {}) {
     const mf = new Miniflare({
         name: 'wish-local-only', host: '127.0.0.1', port: 0, cf: false, log: new Log(LogLevel.ERROR), ...(options.inspect ? { inspectorPort: 0, inspectorHost: '127.0.0.1' } : {}),
         compatibilityDate: '2026-07-30', compatibilityFlags: ['nodejs_compat'], modules: true,
-        script: await readFile(new URL('./.local/worker.mjs', import.meta.url), 'utf8'),
-        durableObjects: { COORDINATOR: { className: 'AccountCoordinator', useSQLite: true } }, durableObjectsPersist: persist,
-        bindings: { LOCAL_TEST_ONLY: 'yes', INTERNAL_TOKEN: internal, SESSIONS: JSON.stringify(sessions), SNAPSHOT: JSON.stringify(snapshot), MOCK_MODE: options.mode ?? 'fast', ...(options.gate ? { MOCK_WAIT_GATE: 'yes' } : {}), ...(options.payloads ? { MOCK_PAYLOADS: JSON.stringify(options.payloads) } : {}), ...(options.detailsFailure ? { MOCK_DETAILS_FAILURE: 'yes' } : {}) },
+        script: await readFile(new URL(options.personal ? './.local/personal.mjs' : './.local/worker.mjs', import.meta.url), 'utf8'),
+        durableObjects: { COORDINATOR: { className: options.personal ? 'PersonalCoordinator' : 'AccountCoordinator', useSQLite: true } }, durableObjectsPersist: persist,
+        serviceBindings: options.serviceBindings,
+        bindings: { ...options.bindings, LOCAL_TEST_ONLY: 'yes', INTERNAL_TOKEN: internal, SESSIONS: JSON.stringify(sessions), SNAPSHOT: JSON.stringify(snapshot), MOCK_MODE: options.mode ?? 'fast', ...(options.gate ? { MOCK_WAIT_GATE: 'yes' } : {}), ...(options.payloads ? { MOCK_PAYLOADS: JSON.stringify(options.payloads) } : {}), ...(options.detailsFailure ? { MOCK_DETAILS_FAILURE: 'yes' } : {}) },
         outboundService: () => { outbound++; return new Response('OUTBOUND_DISABLED', { status: 403 }); },
     });
     try {
