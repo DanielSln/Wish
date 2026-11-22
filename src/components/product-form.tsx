@@ -16,7 +16,8 @@ const empty: ProductInput = { name: '', description: '', category_id: '', priori
 export function ProductForm({ id, initial, onSaved, onCancel, returnToWishlist = false }: { id?: string; initial?: Partial<ProductInput> & {category_hint?:string}; onSaved?: () => void; onCancel?: () => void; returnToWishlist?: boolean }) {
   const { colors, styles } = useUI();
   const repo = useProducts();
-  const manualCategory = useRef(false);
+  // An imported/reviewed category is already part of the user’s draft.
+  const manualCategory = useRef(!!initial?.category_id);
   const saveGate = useRef(createSaveGate());
   const submitting = useRef(false);
   const persistedImage = useRef('');
@@ -77,7 +78,7 @@ export function ProductForm({ id, initial, onSaved, onCancel, returnToWishlist =
     <Text style={styles.heading}>{id ? 'Seu desejo, do seu jeito' : 'O que você quer conquistar?'}</Text>
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {!!input.image_url && <ProductImage uri={input.image_url} large />}
-    {!!id && <ImageEditor id={id} value={input.image_url} disabled={busy} onSaved={image_url=>{persistedImage.current=image_url;setInput(value=>({...value,image_url}));}}/>}
+    <ImageEditor id={id} value={input.image_url} disabled={busy} onSaved={image_url=>{persistedImage.current=image_url;setInput(value=>({...value,image_url}));}}/>
     {field('name', 'Nome do produto *')}
     {!!input.store && <Text style={styles.body}>{input.store}</Text>}
     {!!input.original_url && <Text style={[styles.body,{fontSize:12}]}>O endereço da loja será preservado.</Text>}

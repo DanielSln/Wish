@@ -17,7 +17,7 @@ export function Wishlist({ purchased = false, category }: { purchased?: boolean;
   const [showFilters,setShowFilters] = useState(false);
   useFocusEffect(useCallback(() => {
     void reload; let alive=true; setLoading(true);setError('');
-    const query = purchased ? {...filters,status:'purchased'} : filters;
+    const query = {...filters,status:purchased?'purchased':'pending'};
     Promise.all([repo.list(query),repo.categories()]).then(([items,cats])=>{if(alive){setProducts(items);setCategories(cats)}}).catch(()=>{if(alive)setError('Não foi possível carregar seus desejos.')}).finally(()=>{if(alive)setLoading(false)});
     return ()=>{alive=false};
   },[repo,filters,purchased,reload]));
@@ -28,7 +28,7 @@ export function Wishlist({ purchased = false, category }: { purchased?: boolean;
     <View style={{gap:8}}><View style={[s.row,{justifyContent:'space-between'}]}><Text style={s.heading}>{purchased?'Comprados':'Seus desejos'}</Text><Pressable accessibilityRole="button" accessibilityState={{expanded:showFilters}} onPress={()=>setShowFilters(v=>!v)} style={{minHeight:44,justifyContent:'center',paddingLeft:12}}><Text style={{color:c.primary,fontWeight:'600'}}>Filtros e ordem</Text></Pressable></View>
     <TextInput accessibilityLabel="Pesquisar por nome" placeholder="Pesquisar seus desejos" value={filters.search??''} onChangeText={search=>setFilters(f=>({...f,search}))} style={s.input} placeholderTextColor={c.muted}/>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}><Chip title="Todas" active={!filters.category} onPress={()=>setFilters(f=>({...f,category:undefined}))}/>{categories.map(cat=><Chip key={cat.id} title={cat.name} active={filters.category===cat.id} onPress={()=>setFilters(f=>({...f,category:cat.id}))}/>)}</ScrollView>
-    {showFilters&&<View style={{gap:14}}>{!purchased&&<View style={s.row}>{[['','Todos'],['pending','Pendentes'],['purchased','Comprados']].map(([status,label])=><Chip key={status} title={label} active={(filters.status??'')===status} onPress={()=>setFilters(f=>({...f,status}))}/>)}</View>}<ScrollView horizontal contentContainerStyle={{gap:8}} showsHorizontalScrollIndicator={false}>{sorts.map(([sort,title])=><Chip key={sort} title={title} active={filters.sort===sort} onPress={()=>setFilters(f=>({...f,sort}))}/>)}</ScrollView></View>}
+    {showFilters&&<View style={{gap:14}}><ScrollView horizontal contentContainerStyle={{gap:8}} showsHorizontalScrollIndicator={false}>{sorts.map(([sort,title])=><Chip key={sort} title={title} active={filters.sort===sort} onPress={()=>setFilters(f=>({...f,sort}))}/>)}</ScrollView></View>}
     {loading?<ActivityIndicator color={c.primary}/>:<Text style={[s.body,{fontSize:12}]}>{products.length} {products.length===1?'produto':'produtos'} nesta seleção</Text>}
     {!!error&&<><Text accessibilityRole="alert" style={s.error}>{error}</Text><Button title="Tentar novamente" onPress={()=>setReload(v=>v+1)}/></>}
     </View>

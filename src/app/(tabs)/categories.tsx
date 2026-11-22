@@ -14,7 +14,7 @@ export default function Categories() {
   const [target,setTarget]=useState<Category|null>(null);const [action,setAction]=useState<'rename'|'delete'>('rename');const [renamed,setRenamed]=useState('');
   useFocusEffect(useCallback(()=>{
     void reload; let alive=true;setLoading(true);setError('');
-    Promise.all([repo.categories(),repo.list()]).then(([cats,items])=>{if(alive){setCategories(cats);setCounts(items.reduce<Record<string,number>>((all,p)=>({...all,[p.category_id]:(all[p.category_id]??0)+1}),{}))}}).catch(()=>{if(alive)setError('Não foi possível carregar as categorias.')}).finally(()=>{if(alive)setLoading(false)});
+    Promise.all([repo.categories(),repo.list({status:'pending'})]).then(([cats,items])=>{if(alive){setCategories(cats);setCounts(items.reduce<Record<string,number>>((all,p)=>({...all,[p.category_id]:(all[p.category_id]??0)+1}),{}))}}).catch(()=>{if(alive)setError('Não foi possível carregar as categorias.')}).finally(()=>{if(alive)setLoading(false)});
     return()=>{alive=false};
   },[repo,reload]));
   async function create() {
