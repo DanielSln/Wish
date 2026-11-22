@@ -55,3 +55,16 @@ O gateway 7.2 recebe apenas uma porta de armazenamento tipada (`Pick`), sem muda
 **Não é serviço publicável.** Controles de teste deliberados só são alcançáveis pelo stub local com capacidade interna, nunca pelas rotas do Worker. Não transformar este laboratório em deployment removendo apenas a checagem de loopback. Autenticação mobile, reconciliação real, recuperação operacional e medições de produção exigem projeto e autorização específicos.
 
 Relatório completo: [PHASE-7-3-CLOUDFLARE-READINESS.md](../../docs/PHASE-7-3-CLOUDFLARE-READINESS.md).
+
+## Fase 7.4 — laboratório de autenticação pessoal
+
+Há uma entrada **adicional e explicitamente local** em `personal-worker.ts`, com pareamento individual, prova ECDSA por requisição, reautenticação por chave, revogação, recuperação e witness independente do backup do DO. A entrada 7.3 permanece para regressões; seus bearers estáticos não são aceitos pela entrada pessoal.
+
+```powershell
+node experiments/cloudflare-gateway/build.mjs personal
+node --require ./experiments/search-gateway/offline-loopback.cjs --test experiments/cloudflare-gateway/personal.test.mjs
+```
+
+`personal-harness.mjs` representa os papéis de dispositivo e operador apenas no laboratório; não é código para embarcar no app. Capacidades são geradas em memória e não devem ser impressas ou serializadas. Witnesses e checkpoints ficam sob `.local/` em árvores separadas. Retomada requer o contexto original e witness íntegra; não há reset automático de credenciais/orçamento. Restauração declarada fica bloqueada.
+
+[Modelo de ameaças, procedimentos e limitações da Fase 7.4](../../docs/PHASE-7-4-GATEWAY-AUTH-RECOVERY.md). **Sem autorização de deployment, API real ou integração ao Wish.**
