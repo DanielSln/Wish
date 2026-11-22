@@ -1,0 +1,149 @@
+{
+  "date": "2026-11-22",
+  "baseCommit": "584d466366fb8b657380133122470413e6c4a872",
+  "browserBefore": {
+    "mode": "web isolated browser; fixture delay 1200ms; not Android or store network",
+    "requestStartMs": 933.4611999999997,
+    "draftAvailableMs": 2404.5583,
+    "during": {
+      "linkEditable": false,
+      "manualButtonEnabled": false,
+      "nameFieldVisible": false
+    }
+  },
+  "browserAfter": {
+    "mode": "web isolated browser; fixture delay 1200ms; not Android or store network",
+    "requestStartMs": 362.47170000000006,
+    "draftAvailableMs": 66.88670000000002,
+    "metadataReadyMs": 1603.0307999999995,
+    "during": {
+      "linkEditable": true,
+      "manualButtonEnabled": true,
+      "nameFieldVisible": true
+    }
+  },
+  "parserBefore": {
+    "runtime": "v24.22.1",
+    "mode": "Node synthetic parser benchmark; not Android/store latency",
+    "rows": [
+      {
+        "name": "small",
+        "bytes": 133,
+        "medianMs": 0.24849999999997863,
+        "maxMs": 0.7881000000000142
+      },
+      {
+        "name": "fallback",
+        "bytes": 1224052,
+        "medianMs": 29.508699999999976,
+        "maxMs": 37.19970000000001
+      }
+    ]
+  },
+  "parserAfterIdle": {
+    "runtime": "v24.22.1",
+    "mode": "Node synthetic parser benchmark; not Android/store latency",
+    "rows": [
+      {
+        "name": "small",
+        "bytes": 133,
+        "medianMs": 0.17090000000001737,
+        "maxMs": 0.25030000000000996
+      },
+      {
+        "name": "fallback",
+        "bytes": 1224052,
+        "medianMs": 21.34790000000004,
+        "maxMs": 25.015299999999996
+      }
+    ]
+  },
+  "list": {
+    "result": "passed",
+    "source": "synthetic browser SQLite",
+    "total": 500,
+    "pending": 400,
+    "purchased": 100,
+    "initialRenderedCards": 10,
+    "routeToListMs": 167.71929999999975,
+    "pageErrors": []
+  },
+  "androidBundle": {
+    "sourceMaps": 1,
+    "sourceCount": 1395,
+    "experimentalSources": 0
+  },
+  "webSuites": [
+    {
+      "suite": "navigation",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "suite": "import-flow"
+    },
+    {
+      "suite": "smart-details",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "suite": "store-readiness"
+    },
+    {
+      "exit": 0,
+      "suite": "expandable-description"
+    },
+    {
+      "exit": 0,
+      "suite": "phase61"
+    },
+    {
+      "exit": 0,
+      "suite": "phase62"
+    },
+    {
+      "suite": "phase63",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "suite": "phase63-images"
+    },
+    {
+      "exit": 0,
+      "suite": "phase64"
+    },
+    {
+      "suite": "phase65",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "suite": "phase65-cards"
+    },
+    {
+      "exit": 0,
+      "suite": "tab-labels"
+    },
+    {
+      "suite": "phase80",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "suite": "phase80-list"
+    },
+    {
+      "exit": 0,
+      "suite": "promotions"
+    }
+  ],
+  "nodeTests": {
+    "previous": 415,
+    "new": 13,
+    "passed": 428,
+    "failed": 0
+  },
+  "physicalAndroid": "not tested in phase 8.0"
+}
