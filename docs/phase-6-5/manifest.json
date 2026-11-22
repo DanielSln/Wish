@@ -1,0 +1,368 @@
+{
+  "date": "2026-11-21",
+  "baselineCommit": "5a95361991b8e4aa73c664e1ceea3e1fa5578333",
+  "environment": "Expo Web / Playwright / Chrome; isolated synthetic SQLite catalogue",
+  "review": "User aesthetic approval pending; no Android physical approval",
+  "sourceSha256LF": {
+    "src/app/products/[id].tsx": "d2e52504f42e666478e5fbb996384cf4319d05c493cc4636240944ed6c8903e1",
+    "src/app/(tabs)/settings.tsx": "b40fd9d2973c648305d78486a8db526f1f6869dbe05d78f8342c316e1aa29890",
+    "src/components/wishlist.tsx": "c07b0a5ebfc2b39bfca2e39b7c3fa0a85a53d4dec44c659aa07f03f49000a18f",
+    "src/components/theme-control.tsx": "dd96c70f762ff0b31f3d9ab061963314093dabe51142f048fb17fe59eefdbf9e",
+    "src/components/product-offers.tsx": "bb1562a4a0898b3bf9659a0d72aaafe358b36dbb3f7d3bc75f5064b98e1f797d",
+    "src/domain/commercial-display.ts": "51f13f001b95d343ae0d6e70efb9ec64e82ec66924e5ef3ca636e25eff5f56ba"
+  },
+  "captures": [
+    {
+      "stage": "before",
+      "name": "dark-details-pix.png",
+      "file": "screenshots/before/dark-details-pix.png",
+      "sha256": "4629ba9534d61a5028e7a1997f53206414ee1ed217f0cabec9f87e72c011f9fa",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "before",
+      "name": "dark-home.png",
+      "file": "screenshots/before/dark-home.png",
+      "sha256": "0a7d392029a95b7fa1a8e408925a82c2ee7a4242530ae9cc056cbe5fee7f704a",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "before",
+      "name": "light-details-pix.png",
+      "file": "screenshots/before/light-details-pix.png",
+      "sha256": "41ff5dcd5d416543a57665545543b5eba3f0b94ebfb55aeb6c16e03dc91ded67",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "before",
+      "name": "light-home.png",
+      "file": "screenshots/before/light-home.png",
+      "sha256": "fe4e5bb39733f62f20393cb659edd6fd63008ff4f3565331f5e68434f502699a",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-actions.png",
+      "file": "screenshots/after/dark-actions.png",
+      "sha256": "0327c3bbe4d366475fbc0c4ea94da39bc0f794d7f0bdeb1645cf5663d805a024",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-add.png",
+      "file": "screenshots/after/dark-add.png",
+      "sha256": "fc0530b213a3bc7e3e40d8e4ee78073b592cb42669a82f4059ffb2f1a80e7aea",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-categories.png",
+      "file": "screenshots/after/dark-categories.png",
+      "sha256": "75ceeca4297719079beca6abc3f53d9a25a007a97ae4dfa505854314cb24c999",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-comparison-details-pix.png",
+      "file": "screenshots/after/dark-comparison-details-pix.png",
+      "sha256": "a38dcd99af8eca6cfc4be6f35c3b018d5041bdeb5244b3048e14687c872b1973",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-description-expanded.png",
+      "file": "screenshots/after/dark-description-expanded.png",
+      "sha256": "98a95e086314cc8935f5f56b5a4eb89e5b7c8ecd93b21ec95b7ade33dcdeac88",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-details-long.png",
+      "file": "screenshots/after/dark-details-long.png",
+      "sha256": "b3784ca942419b8d32b24572e0076fe7ad4d8199e98899524bd07d9be9108161",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-details-missing.png",
+      "file": "screenshots/after/dark-details-missing.png",
+      "sha256": "2e6a53c42f6607b9d98f1ca43c72c5c8ec39553384ebabe7f2d6065f061fd188",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-details-offers.png",
+      "file": "screenshots/after/dark-details-offers.png",
+      "sha256": "677cac0457accad5e3131641fcb829c4bb6f121be7f76b6c6d3ac517f76d41a5",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-details-pix.png",
+      "file": "screenshots/after/dark-details-pix.png",
+      "sha256": "88122b38b17748a8a0ca910a2a7160b9c660205cd8b7dd92799c10fd0f79de00",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-edit.png",
+      "file": "screenshots/after/dark-edit.png",
+      "sha256": "eff690a873c18b415a7f0cb7588cd7dd9ff4d6d2a1c3e5a7039fdc2f6f9214d0",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-home.png",
+      "file": "screenshots/after/dark-home.png",
+      "sha256": "9f6f357b6eeb9711501fbede41e2b7de7fe338fc8f834968c45e1b02271b279b",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-import.png",
+      "file": "screenshots/after/dark-import.png",
+      "sha256": "865d3f216592b9ab1f3c718ff893f950f720324d155d1a6f4c3cebb2792dfb40",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-narrow-scaled-card.png",
+      "file": "screenshots/after/dark-narrow-scaled-card.png",
+      "sha256": "9e9d23ceaf85f1240bf9b7750a9c7cefcc67ee49fb75fa9892ee170e6b78d4d6",
+      "width": 320,
+      "height": 740
+    },
+    {
+      "stage": "after",
+      "name": "dark-notes-editor.png",
+      "file": "screenshots/after/dark-notes-editor.png",
+      "sha256": "6466f376c89220e7bf00518da05f932b139e551328eaadfac8fc6d9176bd0b35",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-offer-editor.png",
+      "file": "screenshots/after/dark-offer-editor.png",
+      "sha256": "7e4506ca6b3eafa6ea4da4da8a7b82440918937d270ed8053e58544c1127f143",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-purchased-empty.png",
+      "file": "screenshots/after/dark-purchased-empty.png",
+      "sha256": "f3013263e85c45a195316e7a10ad5f2e4801ec8129bb97bfaecd7ae0526558da",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-purchased.png",
+      "file": "screenshots/after/dark-purchased.png",
+      "sha256": "1067fb5645f1b95e1d51775dbcd9c836e75f3e4afef281149e1f97902a901691",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "dark-settings.png",
+      "file": "screenshots/after/dark-settings.png",
+      "sha256": "99c9fd49e300ff67e32402b61bdcf4609e6bba4e64e9ae19c43b22fde97e3fbc",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-actions.png",
+      "file": "screenshots/after/light-actions.png",
+      "sha256": "ed56ff325a7ae1abead120edea85b86eaae42b4f676c3a40e4f2d28e495caf88",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-add.png",
+      "file": "screenshots/after/light-add.png",
+      "sha256": "9a7bccce94876c5595b7623c34d7bd8490d0e57314674b6776298e0372864345",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-categories.png",
+      "file": "screenshots/after/light-categories.png",
+      "sha256": "f32d07e8763d4fa1e3e82e348183cc596f7dbf7d4a195877c991d146e046b72b",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-comparison-details-pix.png",
+      "file": "screenshots/after/light-comparison-details-pix.png",
+      "sha256": "676237e94ea0026e03b1dc42f5dd474d36099f73e553436290f0bdc7b53b6156",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-description-expanded.png",
+      "file": "screenshots/after/light-description-expanded.png",
+      "sha256": "c4a9e646283d24d813eaa513f1a9f5626f4d8703bbfcd3486c1e20b6204779b2",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-details-long.png",
+      "file": "screenshots/after/light-details-long.png",
+      "sha256": "6d7cdc9353b6b9173fb7bfde1e133741a092271c9a6f3b5c5604959c1c7759f4",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-details-missing.png",
+      "file": "screenshots/after/light-details-missing.png",
+      "sha256": "8db114bb1de0e732685ba2b72b005b438897926612f253026d000511d9ef2ffe",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-details-offers.png",
+      "file": "screenshots/after/light-details-offers.png",
+      "sha256": "0df4b60a2f31e487f47d4cbed24159f1ee084c950303138f0bc03739a2775815",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-details-pix.png",
+      "file": "screenshots/after/light-details-pix.png",
+      "sha256": "e5a1481bd2f9c377497f1b901f7d8d3fd555dc898f3628e7ef059dc2d57614ab",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-edit.png",
+      "file": "screenshots/after/light-edit.png",
+      "sha256": "fb83e645b0a6574fa12290fdb12ea527dfd4d30f1bf9e2b5ea8a7f816a9a54b0",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-home.png",
+      "file": "screenshots/after/light-home.png",
+      "sha256": "d04d8f17545770e5b391f536e980254864747837f32b1e081109a52ce50415be",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-import.png",
+      "file": "screenshots/after/light-import.png",
+      "sha256": "858a3dea97be1a1a2cee1d96eda0b8a37a38603d3c39dbd08c0478cef7f4fbc2",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-narrow-scaled-card.png",
+      "file": "screenshots/after/light-narrow-scaled-card.png",
+      "sha256": "d38dd49609ded6df038e6221317f5512a4f37011ec1a472683b1ca563aeac58b",
+      "width": 320,
+      "height": 740
+    },
+    {
+      "stage": "after",
+      "name": "light-notes-editor.png",
+      "file": "screenshots/after/light-notes-editor.png",
+      "sha256": "ae4590f6d204bacb6d0f838915467f30617bf481c4307f407f5ef1b903a37ffa",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-offer-editor.png",
+      "file": "screenshots/after/light-offer-editor.png",
+      "sha256": "a7dac75f741e71eee05fa9c209a11141ba2d10cf49ee46b0f8accb5770b2e2b7",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-purchased-empty.png",
+      "file": "screenshots/after/light-purchased-empty.png",
+      "sha256": "10cb4a637f18cc3b4a919655df599f14800fe2eb3822c66296500b459991bd77",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-purchased.png",
+      "file": "screenshots/after/light-purchased.png",
+      "sha256": "33793c760ef04276624baed4442b82ba1601e5635673e67989b0beba7ddbbcc0",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "light-settings.png",
+      "file": "screenshots/after/light-settings.png",
+      "sha256": "49d92285bd0b43797d4a253a29a5d6dd6d1811b45012cee556e8115e1ecb10bb",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "stage": "after",
+      "name": "narrow-scaled-details.png",
+      "file": "screenshots/after/narrow-scaled-details.png",
+      "sha256": "7e5d0f5bfcb7ac4ad2f50e7076aab56dc701bc7f02c425b7444a9905f8d0627b",
+      "width": 320,
+      "height": 740
+    },
+    {
+      "stage": "after",
+      "name": "narrow-scaled-home.png",
+      "file": "screenshots/after/narrow-scaled-home.png",
+      "sha256": "6d192e174b2e244202ca6b04036ba72902192b1469c6ffa3caa71513e508b331",
+      "width": 320,
+      "height": 740
+    },
+    {
+      "stage": "after",
+      "name": "narrow-scaled-settings.png",
+      "file": "screenshots/after/narrow-scaled-settings.png",
+      "sha256": "eed8f891473fd0ff0790a7d4f3fafd15cd18cd2cad1f241a640a21dea103cc16",
+      "width": 320,
+      "height": 740
+    },
+    {
+      "stage": "after",
+      "name": "wide-home.png",
+      "file": "screenshots/after/wide-home.png",
+      "sha256": "4488ca63ca6569ce289995fd256dc587f1a2e0b7c92c29a63d30576c8a543a92",
+      "width": 1024,
+      "height": 1000
+    }
+  ]
+}

@@ -32,7 +32,7 @@ export function validateProduct(input: ProductInput): Record<string, string> {
   if (!Object.hasOwn(priorityLabels, input.priority)) errors.priority = 'Selecione uma prioridade válida.';
   if (!['pending', 'purchased'].includes(input.status)) errors.status = 'Status inválido.';
   for (const key of ['original_url'] as const) {
-    if (input[key] && (!isHttpUrl(input[key]) || input[key].length > 2048)) errors[key] = 'Informe um endereço http:// ou https:// válido (até 2048 caracteres).';
+    if (input[key] && (!isHttpUrl(input[key]) || input[key].length > (key === 'original_url' ? 8192 : 2048))) errors[key] = `Informe um endereço http:// ou https:// válido (até ${key === 'original_url' ? 8192 : 2048} caracteres).`;
   }
   if (input.image_url && !isLocalImage(input.image_url)) { try { remoteImageUrl(input.image_url); } catch (error) { errors.image_url = (error as Error).message; } }
   for (const key of ['price_cents', 'desired_price_cents'] as const) {

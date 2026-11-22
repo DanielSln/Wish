@@ -1,8 +1,23 @@
 # Wish
 
-Fases 5/5.1 em revisão: troca manual de imagem, galeria privada e URLs com prévia. Veja [limites e arquitetura](docs/PHASE-5-IMAGES.md) e [diagnóstico HTTPS, enquadramento e roteiro atualizado](docs/PHASE-5-1-IMAGES.md). Não alternar para código anterior à Fase 5 depois de salvar fotos privadas, sem planejar compatibilidade.
+**Fase 9.0 implementada e validada localmente:** backup portátil e recuperação completa em Configurações. [Formato, segurança, testes e checklist Android](docs/PHASE-9-0-LOCAL-BACKUP.md). Teste físico desta função pendente; a APK v6 existente continua sendo a referência estável, sem esta funcionalidade. Nenhuma nova APK foi gerada.
+
+**Fase 8.1 encerrada: APK preview v6 aprovada fisicamente pelo proprietário, 10/10 testes aprovados e nenhuma correção emergencial identificada.** Wish **1.0.0 / versionCode 6 / SQLite v5**, na branch `feature/android-preview-splash`, PR #8 aberto/em rascunho e sem merge. [Resultados físicos e evidências da build](docs/PHASE-8-1-APK-V6-PREPARATION.md). Os testes foram relatados pelo proprietário; não significam importação universal nem aprovação de migrações históricas. Gateway e SerpApi continuam suspensos: [parecer NO-GO da Fase 7.5](docs/PHASE-7-5-REMOTE-READINESS.md). [Implementação e validação técnica da Fase 8.0](docs/PHASE-8-0-IMPORT-UX.md).
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
+
+## Status e roadmap
+
+| Etapa | Estado |
+| --- | --- |
+| Fase 8.0 — importação e experiência | Implementada; 428 testes e validação web documentados na entrega técnica. |
+| Fase 8.1 — APK preview v6 | **Encerrada: 10/10 físicos aprovados pelo proprietário.** Build `fa5a4f81-6b19-4231-b269-2464f8b7828b`, commit compilado `b0ce343ff271ba62df29789d31ce96d6b428890f`. |
+| Fase 9.0 — backup local | Implementada; 477 testes Node/runtime e 17 suítes web aprovados. Android físico pendente; sem nova APK. |
+| Correção emergencial | Nenhuma identificada no retorno físico informado. |
+| Gateway / SerpApi | Experimentos preservados, **NO-GO** para implantação; integração suspensa. |
+| Supabase / PR #5 | Separado e adiado; sem integração nesta fase. |
+| Migração histórica SQLite v4→v5 | Continua sem validação física registrada. |
+| Próxima fase, nova build ou merge | **Aguardar autorização explícita** após a entrega da Fase 9.0. |
 
 ## Executar no Android com Expo Go
 
@@ -12,14 +27,14 @@ Recomendado: Node.js 24 LTS, npm, Git e Expo Go Android compatível com **SDK 58
 git clone https://github.com/DanielSln/Wish.git
 cd Wish
 git fetch origin
-git switch --track origin/feature/product-images-ux
+git switch --track origin/feature/android-preview-splash
 npm ci
 npm start -- --go
 ```
 
-Esta é a branch de revisão; após integrar o PR, use `main`. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
+Esta é a branch de revisão atual (PR #8). Não alterne para `main` ou branches anteriores com catálogo v5 sem confirmar compatibilidade; esta fase não faz merge. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
-Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. APK e Supabase estão adiados; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
+Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. A [APK preview v6](docs/PHASE-8-1-APK-V6-PREPARATION.md) foi concluída e aprovada fisicamente pelo proprietário; Supabase permanece adiado; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
 Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seguro (localhost ou HTTPS), WebAssembly, SharedArrayBuffer e dos cabeçalhos COOP/COEP configurados em metro.config.js. Em hospedagem, os mesmos cabeçalhos precisam ser enviados pelo servidor. Dados de navegador e celular ficam em bancos separados.
 
@@ -29,7 +44,7 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 - Nome obrigatório, URLs HTTP(S), preços em reais com duas casas, limites de tamanho e mensagens de erro.
 - Imagem por URL opcional e placeholder para imagem ausente ou indisponível.
 - Categorias Casa, Tecnologia e Roupas, além de categorias personalizadas.
-- Busca por nome, filtros de categoria e status, ordenação por preço, prioridade e data.
+- Busca por nome, filtros de categoria e ordenação por preço, prioridade e data; pendentes em Início/Categorias, comprados exclusivamente em Comprados.
 - Marcar como comprado ou reverter para pendente; editar anotações e abrir o link da loja.
 - Persistência SQLite local, inclusive ao reabrir; consultas e alterações funcionam offline. Imagens remotas e links da loja precisam de rede. A primeira carga em Expo Go depende do servidor; um binário instalado é necessário para uso autônomo sem servidor de desenvolvimento.
 
@@ -42,17 +57,17 @@ Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seg
 `src/components/`: formulário, imagem e elementos visuais compartilhados.
 `src/app/products/`: rotas de cadastro, edição e detalhes.
 
-Banco wish.db, esquema v4 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
+Banco wish.db, esquema v5 (v1: produtos/categorias; v2: app_settings para aparência; v4: personal_notes e offer_details, sem alterar notes antigo; v5: product_offers, aditiva e com backup prévio verificado; v3 é reservado à branch separada do Supabase e recusado): produtos e categorias com IDs UUID, timestamps UTC ISO 8601 e deleted_at. Preços em centavos inteiros e NULL para preço desconhecido. Exclusões de produtos geram tombstones; o app não oferece restauração. Isso prepara um adaptador futuro para Supabase, mas NÃO implementa sincronização, contas ou transmissão de dados. Futuras migrações devem ser incrementais, preservar registros e atualizar a versão apenas dentro de uma transação concluída. Bancos de versões mais novas são recusados sem apagar dados. Não desinstale o app nem limpe seus dados se quiser manter o banco.
 
 ## Fase 3 — Importação por link
 
-Em **Adicionar**, cole o endereço HTTPS no campo em destaque e toque em **Adicionar por link**. A prévia é consultada automaticamente para lojas habilitadas; **Buscar informações** permite tentar novamente. Confira a prévia e toque em **Revisar e escolher categoria**. O formulário mostra categoria, prioridade e preço opcional; os campos adicionais ficam recolhidos em **Mais detalhes e categorias**, onde você pode revisar descrição, imagem, loja, URL e anotações. Preços com validade vencida, futura ou inválida não são preenchidos. Um valor informado pela página não é garantia de preço atual. Apenas **Salvar desejo** grava no SQLite. A importação precisa de internet; o produto salvo continua disponível offline.
+Em **Adicionar**, cole o endereço HTTPS e toque em **Adicionar por link**. O rascunho aparece imediatamente e, para lojas habilitadas, a consulta começa automaticamente. Você pode completar nome/categoria/prioridade e escolher imagem enquanto aguardamos; a resposta não sobrescreve campos já tocados. **Cancelar consulta** preserva o rascunho; **Buscar informações** permite tentar novamente. Toque em **Desejar** para salvar diretamente, ou no lápis **Editar informações** para abrir o formulário completo opcional. Cancelar essa edição restaura a prévia. Preço e imagem são opcionais. Apenas Desejar ou Salvar desejo cadastra o produto. A importação precisa de internet; o catálogo salvo continua local.
 
-O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer) e Open Graph disponibilizados no HTML. Não executa scripts da loja nem utiliza proxy, login, contorno de CAPTCHA/bloqueios ou serviços pagos. Imagens relativas são resolvidas em relação à página. Preços precisam de moeda BRL explícita e valor válido; moeda estrangeira, ofertas múltiplas e preços agregados ficam sem valor para revisão manual. Páginas com vários produtos são recusadas para evitar selecionar um produto arbitrariamente.
+O serviço `src/services/product-import.ts` lê metadados JSON-LD (Product/Offer), Open Graph, microdata e estruturas públicas já suportadas no HTML. Não executa scripts da loja nem utiliza proxy, login, contorno de CAPTCHA/bloqueios ou serviços pagos. Imagens relativas são resolvidas em relação à página. Preços precisam de moeda BRL explícita e valor válido; moeda estrangeira, preços agregados ou ofertas sem identificação inequívoca de produto/condição ficam sem valor para revisão manual. Preços finais explicitamente anunciados, incluindo PIX e cupom, conservam as condições; descontos não são calculados. Páginas com vários produtos são recusadas para evitar selecionar um produto arbitrariamente.
 
-Consultas têm cancelamento e limite de tempo de 12 segundos. O transporte expo/fetch bloqueia redirecionamentos e limita a leitura em streaming a 2 milhões de bytes, mesmo sem Content-Length. HTTP de erro, conteúdo não HTML, stream indisponível e ausência de metadados têm mensagem e alternativa manual. Não há consulta periódica de preço ou garantia de suporte a uma loja específica. Páginas dinâmicas e bloqueios CORS no navegador podem impedir a importação; nesse caso, **Preencher manualmente** preserva o link HTTPS válido. Cadastros sem rede continuam disponíveis pelo botão **Novo desejo**.
+Consultas têm cancelamento e limite de tempo de 12 segundos. O transporte expo/fetch valida até quatro redirecionamentos da mesma família autorizada e limita a leitura em streaming a 2 milhões de bytes, mesmo sem Content-Length. HTTP de erro, conteúdo não HTML, stream indisponível e ausência de metadados têm mensagem e alternativa manual. Não há consulta periódica de preço ou garantia de suporte a uma loja específica. Páginas dinâmicas e bloqueios CORS no navegador podem impedir a importação; nesse caso, **Preencher manualmente** preserva o link HTTPS válido. Cadastros sem rede continuam disponíveis pelo botão **Preencher manualmente**.
 
-Consultas automáticas são restritas aos hosts exatos de Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia definidos em src/services/import-policy.ts; imagens extraídas usam apenas CDNs explícitos. Links encurtados, redirects e outras lojas usam cadastro manual. A restrição reduz acesso a destinos arbitrários, mas não equivale a isolamento completo de DNS/IP. Veja [docs/PHASE-3-INTEGRATION.md](docs/PHASE-3-INTEGRATION.md) para os controles, riscos residuais e validação atual, e [docs/PHASE-2-INTEGRATION.md](docs/PHASE-2-INTEGRATION.md) para a revisão da base.
+Consultas automáticas são restritas aos hosts exatos de Amazon Brasil, Mercado Livre, Magalu, KaBuM! e Casas Bahia definidos em src/services/import-policy.ts; imagens extraídas usam apenas CDNs explícitos. Youcom também é habilitada; a.co e meli.la podem ser resolvidos apenas por redirects verificáveis da mesma família. Shopee, AliExpress e outras lojas continuam disponíveis para cadastro manual. Redirecionamentos opacos no navegador não são contornados. A restrição reduz acesso a destinos arbitrários, mas não equivale a isolamento completo de DNS/IP. Veja [docs/PHASE-3-INTEGRATION.md](docs/PHASE-3-INTEGRATION.md) para os controles, riscos residuais e validação atual, e [docs/PHASE-2-INTEGRATION.md](docs/PHASE-2-INTEGRATION.md) para a revisão da base.
 
 Os dados existentes e a versão do banco não mudaram. Supabase e comparação/histórico de preços continuam para as próximas fases. A Fase 2 do [PR #1](https://github.com/DanielSln/Wish/pull/1) foi integrada à main no commit 0c36cbaff599ba4f5c826877f011f4ab54321133, mediante autorização do proprietário. Esta branch foi sincronizada com essa main preservando os commits. A Fase 3 do [PR #2](https://github.com/DanielSln/Wish/pull/2) também foi integrada à main mediante autorização, no commit 278bb1180afd34b9c6de428bcb2623b2f1b37078. A reformulação visual do PR #3 foi integrada à main no commit d615495c1b4c403432a58f984f68045477123f7c após autorização e validação final.
 
@@ -86,7 +101,7 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 
 ## Testar em Android real
 
-Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A preparação do perfil APK está em chore/android-device-testing, em revisão separada; o aplicativo visual já está na main.
+Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A configuração atual e a APK v6 estão em `feature/android-preview-splash`, PR #8; [resultado, validação física e instalação](docs/PHASE-8-1-APK-V6-PREPARATION.md). Não gerar outra build sem autorização.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
 
@@ -104,4 +119,16 @@ Ver na loja substitui URLs técnicas na tela de detalhes. Notas pessoais têm ed
 
 ### Cadastro em outras lojas e carregamento
 
-Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas podem seguir com **Continuar cadastro**, mantendo URL/domínio e preenchimento manual; a ausência de prévia não bloqueia salvar. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
+Youcom usa o parser genérico nos hosts revisados. Lojas HTTPS não revisadas recebem prévia manual compacta com **Desejar**, mantendo URL/domínio e solicitando apenas os dados obrigatórios ausentes. Textos compartilhados e escolha entre vários links são suportados. Não há consulta arbitrária sem proteção de DNS no cliente. O ícone de carregamento passa a usar o W transparente existente; molduras próprias do Expo Go não são controladas pelo Wish. Consulte [limitações, investigação e testes](docs/STORES-SPLASH.md).
+
+### Primeira APK e título compacto
+
+Preparação da Fase 6, auditoria da splash, situação da build e roteiro físico: [docs/PHASE-6-ANDROID-PREVIEW.md](docs/PHASE-6-ANDROID-PREVIEW.md). Conta Expo e perfil preview conferidos; situação da assinatura/build e validação física atualizada no relatório.
+
+### Fase 6.1 — ofertas e interface compacta
+
+[Relatório, backup v5 autorizado e roteiro físico](docs/PHASE-6-1-REFINEMENTS.md). Cadastro manual de ofertas por desejo, sem busca automática ou garantia de preço atual. A [APK v2 autorizada e concluída](docs/PHASE-6-1-APK-V2.md) inclui esta fase; instalar sobre a v1 sem desinstalar. O proprietário informou 20 testes físicos aprovados, 3 não realizados e nenhum reprovado na instalação limpa da v2. A migração Android v4→v5 permanece sem validação física. Não abrir o banco v5 com código v4.
+
+### Fase 6.2
+
+[Implementação, testes e pendências](docs/PHASE-6-2-REFINEMENTS.md) · [Pesquisa documental de APIs](docs/phase-6-2-price-api-research.md). Sem nova APK, migração, integração externa ou alteração da identidade Android.

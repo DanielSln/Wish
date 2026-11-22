@@ -1,0 +1,6 @@
+# Local Cloudflare simulator: never commit installed tools, state, credentials or bundles.
+.tools/
+.local/
+.wrangler/
+.dev.vars*
+*.log

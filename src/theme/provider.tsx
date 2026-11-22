@@ -1,3 +1,4 @@
+import {catalogGate} from '@/data/catalog-gate';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -11,14 +12,14 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let alive = true;
-    db.getFirstAsync<{ value: string }>("SELECT value FROM app_settings WHERE key='appearance'").then(row => {
+    catalogGate(db).run(()=>db.getFirstAsync<{ value: string }>("SELECT value FROM app_settings WHERE key='appearance'")).then(row => {
       if (alive && row && ['system', 'light', 'dark'].includes(row.value)) setValue(row.value as AppearancePreference);
     }).catch(() => { if (alive) setError('Não foi possível carregar a aparência salva.'); }).finally(() => { if (alive) setReady(true); });
     return () => { alive = false; };
   }, [db]);
   async function setPreference(next: AppearancePreference) {
     if (!ready) throw new Error('Aguarde o carregamento da aparência.');
-    await db.runAsync("INSERT INTO app_settings(key,value) VALUES ('appearance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", next);
+    await catalogGate(db).run(()=>db.runAsync("INSERT INTO app_settings(key,value) VALUES ('appearance',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", next));
     setValue(next); setError('');
   }
   const mode = resolveAppearance(preference, system);

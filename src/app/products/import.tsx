@@ -1,84 +1,82 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
-import { ActivityIndicator, ScrollView, Text, TextInput, View } from 'react-native';
-import { ProductForm } from '@/components/product-form';
-import { ExpandableText } from '@/components/expandable-text';
-import { ProductImage } from '@/components/product-image';
-import { Button, useUI } from '@/components/ui';
-import { money, type ProductInput } from '@/domain/product';
-import { importProduct, manualProductFromLink, linkImportPlan, importDestination, type ImportPreview } from '@/services/product-import';
-
-export default function ImportScreen() {
-  const { colors, styles } = useUI();
-  const params = useLocalSearchParams<{ url?: string }>();
-  const [url, setUrl] = useState(typeof params.url === 'string' ? params.url : '');
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const [initial, setInitial] = useState<Partial<ProductInput> | null>(null);
-  const [manualNotice,setManualNotice]=useState('');
-  let manualOnly=false;try{manualOnly=!linkImportPlan(url).automatic;}catch{}
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const active = useRef<AbortController | null>(null);
-  useEffect(() => () => { active.current?.abort(); active.current = null; }, []);
-
-  const attempted = useRef<string | null>(null);
-  const load = useCallback(async (automatic = false) => {
-    if (active.current) return;
-    try{if(!linkImportPlan(url).automatic){setInitial(manualProductFromLink(url));setManualNotice('Complete os dados do desejo. O endereço e o domínio da loja foram preservados, sem consulta automática a um destino não verificado.');return;}}catch{/* The existing validator explains invalid addresses. */}
-    let candidate = url.trim();
-    try { candidate = importDestination(url); } catch { /* The explicit action explains unsupported/invalid links below. */ }
-    if (automatic && attempted.current === candidate) return;
-    attempted.current = candidate;
-    const controller = new AbortController();
-    active.current = controller;
-    setBusy(true); setError(''); setPreview(null);
-    try {
-      const result = await importProduct(url, controller.signal, expoFetch);
-      if (active.current === controller) setPreview(result);
-    } catch (e) {
-      if (active.current === controller) setError(e instanceof Error ? e.message : 'Não foi possível importar este link.');
-    } finally {
-      if (active.current === controller) { active.current = null; setBusy(false); }
-    }
-  }, [url]);
-  useEffect(() => {
-    if (initial) return;
-    try { importDestination(url); } catch { return; }
-    const timer = setTimeout(() => { void load(true); }, 900);
-    return () => clearTimeout(timer);
-  }, [url, load, initial]);
-  function manual() {
-    let draft: Partial<ProductInput> = {};
-    try { draft = manualProductFromLink(url); } catch { /* An invalid link must not prevent entering a new product manually. */ }
-    setManualNotice(draft.original_url ? 'Complete os dados do desejo. O link da loja foi preservado.' : 'Você pode cadastrar manualmente sem usar o endereço inválido.');
-    setInitial(draft);
-  }
-  if (initial) return <View style={{flex:1}}>{!!manualNotice&&<Text style={[styles.body,{padding:24,paddingBottom:0}]}>{manualNotice}</Text>}<ProductForm initial={initial} /></View>;
-  return <ScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-    <Text style={styles.heading}>Um link, um novo desejo</Text>
-    <Text style={styles.body}>Cole o link HTTPS de um produto. A consulta acessa a loja pela sua conexão e usa apenas os metadados que ela disponibilizar. A prévia é consultada automaticamente após você colar um link compatível. Nada é salvo até você revisar e confirmar.</Text>
-    <Text style={styles.body}>Você pode salvar desejos de qualquer loja com endereço HTTPS válido. A prévia automática usa domínios revisados, incluindo Youcom e links meli.la do Mercado Livre. Nas demais lojas, continue preenchendo os dados com o link preservado.</Text>
-    <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!busy} onChangeText={value => { attempted.current = null; setUrl(value); setPreview(null); setError(''); }} placeholder="https://loja.com.br/produto" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={2048} />
-    <Button title={busy ? 'Consultando loja…' : manualOnly ? 'Continuar cadastro' : 'Buscar informações'} disabled={busy || !url.trim()} onPress={() => load()} />
-    {manualOnly&&<Text style={styles.body}>A prévia automática não está disponível para este endereço neste cliente. O cadastro continua disponível.</Text>}
-    {busy && <><ActivityIndicator color={colors.accent} /><Button title="Cancelar consulta" onPress={() => { active.current?.abort(); active.current = null; setBusy(false); }} /></>}
-    {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-    {preview && <View style={styles.card}>
-      <Text style={styles.heading}>Prévia do produto</Text>
-      <ProductImage uri={preview.product.image_url} large />
-      <Text style={styles.heading}>{preview.product.name || 'Informe o nome na revisão'}</Text>
-      <Text style={styles.body}>{preview.product.store}</Text>
-      {preview.prices.original_cents !== null && <Text accessibilityLabel={`Preço anterior informado: ${money(preview.prices.original_cents)}`} style={[styles.body, preview.product.price_cents !== null && {textDecorationLine:'line-through'}]}>Preço anterior informado: {money(preview.prices.original_cents)}</Text>}
-      <Text style={styles.heading}>Preço informado pela página: {money(preview.product.price_cents)}</Text>
-      {preview.prices.conditional && <View style={{gap:12}}><Text style={styles.body}>{preview.prices.conditional.label}: {money(preview.prices.conditional.price_cents)}. Depende dessa forma de pagamento.</Text><Button variant="secondary" title="Revisar usando o preço PIX" onPress={() => { const option = preview.prices.conditional!; setInitial({...preview.product,price_cents:option.price_cents,offer_details:(preview.product.offer_details??'')+'\nPreço escolhido na revisão: '+money(option.price_cents)+' — '+option.label+'. Confira as condições na loja.'}); }}/></View>}
-      {preview.prices.coupon && <View style={{gap:8}}><Text style={styles.label}>Cupom anunciado: {preview.prices.coupon.code}</Text>{preview.prices.coupon.percent !== null && <Text style={styles.body}>{preview.prices.coupon.percent}% de desconto anunciado.</Text>}{preview.prices.coupon.amount_cents !== null && <Text style={styles.body}>{money(preview.prices.coupon.amount_cents)} de desconto anunciado.</Text>}{preview.prices.coupon.price_cents !== null && <Text style={styles.body}>Preço anunciado com cupom: {money(preview.prices.coupon.price_cents)} — sujeito às condições.</Text>}<Text style={styles.body}>{preview.prices.coupon.conditions}</Text><Text style={styles.body}>Nenhum cupom foi aplicado. Na revisão, você pode informar manualmente o preço com cupom confirmado por você.</Text></View>}
-      {!!preview.product.description && <ExpandableText text={preview.product.description} />}
-      <Text style={styles.body}>Origem: {new URL(preview.product.original_url).hostname}</Text>
-      {preview.warnings.map(warning => <Text key={warning} style={styles.body}>{warning}</Text>)}
-      <Button title="Revisar e escolher categoria" onPress={() => setInitial(preview.product)} />
-    </View>}
-    <Text style={styles.body}>Algumas lojas exigem login, carregam os dados por JavaScript ou bloqueiam consultas. Nesses casos, use o cadastro manual. Não há contorno de bloqueios ou atualização automática de preço.</Text>
-    <Button title="Preencher manualmente" disabled={busy} onPress={manual} />
-  </ScrollView>;
+import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
+import {router,useLocalSearchParams,useFocusEffect} from 'expo-router';
+import {fetch as expoFetch} from 'expo/fetch';
+import {ActivityIndicator,Text,TextInput,View} from 'react-native';
+import {ImportPriceSummary} from '@/components/import-price-summary';
+import {Disclosure} from '@/components/disclosure';
+import {KeyboardScrollView} from '@/components/keyboard-scroll-view';
+import {ProductForm} from '@/components/product-form';
+import {ProductImage} from '@/components/product-image';
+import {ImageEditor} from '@/components/image-editor';
+import {Icon} from '@/components/brand';
+import {Button,Chip,TextButton,useUI} from '@/components/ui';
+import {priorityLabels,type Category,type Priority,type ProductInput} from '@/domain/product';
+import {createSaveGate,validateImportDraft} from '@/domain/import-draft';
+import {ImportSession} from '@/domain/import-session';
+import {useProducts} from '@/data/use-products';
+import {importProduct,linkImportPlan} from '@/services/product-import';
+import {importFailureMessage} from '@/services/import-messages';
+import {sharedLinks} from '@/services/import-links';
+const phaseLabels={fetching:'Consultando loja…',reading:'Recebendo informações…',extracting:'Preparando informações…'};
+export default function ImportScreen(){
+ const {colors,styles}=useUI(),repo=useProducts(),params=useLocalSearchParams<{url?:string}>();
+ const [url,setUrl]=useState(typeof params.url==='string'?params.url:''),[choice,setChoice]=useState('');
+ const links=useMemo(()=>sharedLinks(url),[url]);
+ const selectedUrl=useMemo(()=>links.length===1?links[0]:links.includes(choice)?choice:'',[links,choice]);
+ const [flow]=useState(()=>new ImportSession()),state=useSyncExternalStore(flow.subscribe,flow.getSnapshot,flow.getSnapshot);
+ const {draft,preview,phase}=state;
+ const busy=phase==='fetching'||phase==='reading'||phase==='extracting',saving=phase==='saving'||phase==='saved';
+ const [categories,setCategories]=useState<Category[]>([]),[categoryError,setCategoryError]=useState(''),[categoryRetry,setCategoryRetry]=useState(0);
+ const [initial,setInitial]=useState<Partial<ProductInput>|null>(null),[errors,setErrors]=useState<Record<string,string>>({});
+ const attempted=useRef<string|null>(null),saveGate=useRef(createSaveGate()),submitting=useRef(false);
+ let automatic=false;try{automatic=linkImportPlan(selectedUrl).automatic;}catch{}
+ useEffect(()=>{let alive=true;repo.categories().then(cats=>{if(alive){setCategories(cats);flow.setCategories(cats);setCategoryError('');}}).catch(()=>{if(alive)setCategoryError('Não foi possível carregar as categorias.');});return()=>{alive=false;};},[repo,flow,categoryRetry]);
+ useEffect(()=>{flow.select(selectedUrl);},[flow,selectedUrl]);
+ useFocusEffect(useCallback(()=>()=>{flow.cancel('');},[flow]));
+ const load=useCallback(async()=>{
+   const token=flow.begin();if(!token)return;attempted.current=token.url;
+   try{const result=await importProduct(token.url,token.signal,expoFetch,stage=>flow.progress(token,stage));flow.complete(token,result);}catch(e){flow.fail(token,importFailureMessage(e));}
+ },[flow]);
+ useEffect(()=>{if(initial||!automatic||attempted.current===selectedUrl)return;const timer=setTimeout(()=>{void load();},300);return()=>clearTimeout(timer);},[selectedUrl,automatic,initial,load]);
+ function changeUrl(value:string){if(saving||submitting.current)return;const candidates=sharedLinks(value);flow.select(candidates.length===1?candidates[0]:'');attempted.current=null;saveGate.current=createSaveGate();setChoice('');setUrl(value);setErrors({});}
+ function edit(){attempted.current=selectedUrl;const value=flow.openEditor();if(value!==null)setInitial(value);}
+ async function desire(){
+   if(submitting.current)return;const snapshot=flow.beginSave();if(!snapshot)return;submitting.current=true;
+   try{
+     const id=await saveGate.current.run(async()=>{
+       const cats=await repo.categories();setCategories(cats);
+       const next={...snapshot,name:snapshot.name.trim()},validation=validateImportDraft(next,cats);setErrors(validation);
+       if(Object.keys(validation).length)throw new Error('Complete os campos indicados para desejar.');
+       return repo.save(next);
+     });
+     if(id){flow.saved();router.replace({pathname:'/',params:{saved:id}});}
+   }catch(e){flow.saveFailed(e instanceof Error?e.message:'Não foi possível salvar. Seus campos foram preservados.');}
+   finally{submitting.current=false;}
+ }
+ if(initial)return <ProductForm initial={initial} returnToWishlist onSaved={()=>flow.saved()} onCancel={()=>{setInitial(null);flow.closeEditor();}}/>;
+ return <KeyboardScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content,{gap:12,paddingTop:12}]}>
+   <Text style={styles.heading}>Um link, um novo desejo</Text>
+   <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!saving} onChangeText={changeUrl} placeholder="Cole o link da loja" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={16384}/>
+   {links.length>1&&<View style={{gap:8}}><Text style={styles.label}>Escolha o link do produto</Text>{links.map(link=><Button key={link} title={link} variant="secondary" disabled={saving} onPress={()=>{flow.select(link);setChoice(link);attempted.current=null;saveGate.current=createSaveGate();setErrors({});}}/>)}</View>}
+   {busy&&<View style={{gap:4}}><View style={styles.row}><ActivityIndicator size="small" color={colors.accent}/><Text accessibilityLiveRegion="polite" style={styles.body}>{phaseLabels[phase]}</Text></View><Text style={[styles.body,{fontSize:13}]}>Você pode preencher enquanto buscamos.</Text><TextButton title="Cancelar consulta" onPress={()=>flow.cancel()}/></View>}
+   {!!state.message&&<Text accessibilityRole="alert" style={phase==='idle'&&state.message.startsWith('Consulta cancelada')?styles.body:styles.error}>{state.message}</Text>}
+   {!!categoryError&&<View><Text style={styles.error}>{categoryError}</Text><TextButton title="Tentar carregar categorias" onPress={()=>setCategoryRetry(v=>v+1)}/></View>}
+   {draft&&<View style={{gap:12}}>
+     {!!draft.image_url&&<ProductImage uri={draft.image_url} large compact/>}
+     <ImageEditor value={draft.image_url} disabled={saving} onSaved={image_url=>flow.edit('image_url',image_url)}/>
+     <View><Text style={styles.label}>Nome do produto *</Text><TextInput accessibilityLabel="Nome do produto *" value={draft.name} editable={!saving} style={styles.input} onChangeText={name=>flow.edit('name',name)} placeholder="O que você quer guardar?" placeholderTextColor={colors.muted} maxLength={160}/>{!!errors.name&&<Text style={styles.error}>{errors.name}</Text>}</View>
+     <Text style={styles.body}>{draft.store}</Text>
+     {preview?<ImportPriceSummary prices={preview.prices}/>:<Text style={styles.body}>Preço e imagem são opcionais.</Text>}
+     <View><Text style={styles.label}>Categoria</Text><View style={styles.row}>{categories.map(category=><Chip key={category.id} title={category.name} active={draft.category_id===category.id} onPress={()=>{if(!saving)flow.edit('category_id',category.id);}}/>)}</View>{!!errors.category_id&&<Text style={styles.error}>{errors.category_id}</Text>}{categories.length===0&&!categoryError&&<Text style={styles.body}>Carregando categorias…</Text>}</View>
+     <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(priority=><Chip key={priority} title={priorityLabels[priority]} active={draft.priority===priority} onPress={()=>{if(!saving)flow.edit('priority',priority);}}/>)}</View></View>
+     <Button title={saving?'Salvando…':'Desejar'} icon={<Icon name="heart" color={colors.onPrimary} size={20}/>} disabled={saving} onPress={()=>{void desire();}}/>
+     <Button title="Editar informações" variant="secondary" icon={<Icon name="edit" size={20}/>} disabled={saving} onPress={edit}/>
+     {!!draft.description&&<Disclosure title="Descrição"><Text style={styles.body}>{draft.description}</Text></Disclosure>}
+     <Disclosure title="Condições e origem"><Text style={styles.body}>{draft.offer_details}</Text>{preview?.warnings.map(warning=><Text key={warning} style={styles.body}>{warning}</Text>)}</Disclosure>
+     {automatic&&!busy&&<TextButton title={preview?'Atualizar informações':'Buscar informações'} disabled={saving} onPress={()=>{void load();}}/>}
+     {!automatic&&<Text style={styles.body}>Consulta automática indisponível nesta loja. Complete seu desejo; o link foi preservado.</Text>}
+   </View>}
+   {!draft&&<Button title="Preencher manualmente" variant="secondary" disabled={saving} onPress={edit}/>}
+   <Disclosure title="Sobre a importação"><Text style={styles.body}>Usamos informações públicas disponíveis no link, sem contornar bloqueios. Complete apenas o que faltar. Preços e condições devem ser conferidos na loja. Nada é salvo até tocar em Desejar ou salvar o formulário.</Text></Disclosure>
+ </KeyboardScrollView>;
 }

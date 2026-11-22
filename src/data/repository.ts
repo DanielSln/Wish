@@ -1,3 +1,5 @@
+import {guardRepository} from './catalog-gate.ts';
+import { validateOffer, type Offer, type OfferInput } from '../domain/offers.ts';
 import type { Database } from './migrations.ts';
 import { isLocalImage, remoteImageUrl } from '../domain/image-management.ts';
 import { validateProduct } from '../domain/product.ts';
@@ -5,7 +7,22 @@ import type { Category, Filters, Product, ProductInput, PurchaseStatus } from '.
 
 const fields = ['name','description','category_id','priority','image_url','price_cents','desired_price_cents','store','original_url','notes','personal_notes','offer_details','status'] as const;
 export function createRepository(db: Database, uuid: () => string, now = () => new Date().toISOString()) {
-  return {
+  return guardRepository(db, {
+    offers: (productId: string) => db.getAllAsync<Offer>('SELECT o.* FROM product_offers o JOIN products p ON p.id=o.product_id WHERE o.product_id=? AND o.deleted_at IS NULL AND p.deleted_at IS NULL ORDER BY o.price_cents, o.recorded_at DESC, o.id',productId),
+    async saveOffer(productId: string, input: OfferInput, id?: string) {
+      validateOffer(input);
+      const date=now();
+      const values=[input.store.trim(),input.price_cents,input.url,input.condition.trim(),input.conditional,date,date];
+      const result = id
+        ? await db.runAsync('UPDATE product_offers SET store=?,price_cents=?,url=?,condition=?,conditional=?,recorded_at=?,updated_at=? WHERE id=? AND product_id=? AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM products WHERE id=? AND deleted_at IS NULL)',...values,id,productId,productId)
+        : await db.runAsync('INSERT INTO product_offers(id,product_id,store,price_cents,url,condition,conditional,recorded_at,updated_at,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM products WHERE id=? AND deleted_at IS NULL)',uuid(),productId,...values,date,productId);
+      if (!(result as {changes:number}).changes) throw new Error('Oferta ou desejo não disponível. Reabra os detalhes.');
+    },
+    async removeOffer(productId: string, id: string) {
+      const date=now();
+      const result=await db.runAsync('UPDATE product_offers SET deleted_at=?,updated_at=? WHERE id=? AND product_id=? AND deleted_at IS NULL AND EXISTS (SELECT 1 FROM products WHERE id=? AND deleted_at IS NULL)',date,date,id,productId,productId);
+      if (!(result as {changes:number}).changes) throw new Error('Oferta não disponível.');
+    },
     categories: () => db.getAllAsync<Category>('SELECT id,name FROM categories WHERE deleted_at IS NULL ORDER BY name COLLATE NOCASE'),
     async addCategory(name: string) {
       const trimmed = name.trim();
@@ -82,5 +99,5 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
     setStatus: (id: string, status: PurchaseStatus) => db.runAsync('UPDATE products SET status=?,updated_at=? WHERE id=? AND deleted_at IS NULL', status, now(), id),
     // Tombstones preserve deletions for a future sync adapter. No sync or user data leaves the device.
     remove: (id: string) => { const date = now(); return db.runAsync('UPDATE products SET deleted_at=?,updated_at=? WHERE id=? AND deleted_at IS NULL', date, date, id); },
-  };
+  });
 }
