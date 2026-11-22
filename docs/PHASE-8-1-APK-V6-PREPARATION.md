@@ -1,4 +1,115 @@
-# Fase 8.1 — preparação segura da APK preview v6
+# Fase 8.1 — APK preview v6: preparação, compilação e verificação
+
+**Situação atual: APK v6 APTA PARA INSTALAÇÃO para teste físico. Uma única build gratuita concluída; certificado/package/versionCode conferidos. A validação física e a verificação integral independente da assinatura não foram executadas.**
+
+## 9. Compilação autorizada — APK preview v6
+
+**Atualização posterior à preparação documental preservada no histórico ao final.** O proprietário autorizou explicitamente alterar 5→6 e executar uma única build gratuita, sem novas credenciais, dependências, instalação no aparelho ou merge.
+
+### Cota gratuita antes da alteração e submissão
+
+Consulta atual, autenticada e somente leitura pelo EAS CLI 27.11.0 já instalado, antes de alterar app.json. Evidência conferida em **22/11/2026 às 15:55:30 (São Paulo)**:
+
+- Conta `danielsln`, plano **Free**.
+- Android: **5/15 usadas, 10 disponíveis**; total de builds: **5/30**.
+- Período retornado: 01/11/2026 00:00 UTC a **01/12/2026 00:00 UTC**; renovação local em **30/11/2026 às 21h**.
+- Uso excedente de builds: **0**, custo excedente: **US$ 0**, estimativa total retornada: **US$ 0**, addons: nenhum.
+- A build cabia na cota Android e total. A [política oficial do plano Free](https://docs.expo.dev/billing/plans/) não permite cobrança excedente automática. Não houve contratação, upgrade, checkout ou inclusão de método de pagamento.
+
+Não foram utilizados saldos históricos para aprovar a execução. Os metadados atuais também confirmaram a credencial padrão existente, os cinco builds anteriores concluídos e ausência de versionCode 6 antes desta submissão.
+
+### Alteração isolada e única submissão
+
+Commit compilado: **`b0ce343ff271ba62df29789d31ce96d6b428890f`** — `chore(android): prepare preview v6 version code`, publicado exclusivamente em `feature/android-preview-splash`.
+
+O diff desse commit é somente **app.json / expo.android.versionCode: 5 → 6**, uma linha. Mantidos 1.0.0, com.danielsln.wish, SDK 58, SQLite v5, package/lockfile, perfil preview/internal/APK, developmentClient false, fonte local da versão e ausência de autoIncrement. Branch limpa e sincronizada antes da execução.
+
+Executado uma única vez, usando o EAS CLI 27.11.0 já em cache, sem npx instalar/atualizar ferramentas:
+
+```text
+eas build --platform android --profile preview --freeze-credentials --non-interactive --no-wait --json
+```
+
+O executável real foi o `bin/run` do CLI existente via Node. `CI=1`, modo não interativo e freeze-credentials preservaram a credencial. O CLI confirmou `Build Credentials FFwe333Y-s (default)` e ambiente preview. Nenhuma keystore foi criada, substituída, rotacionada ou baixada.
+
+`--no-wait` encerrou somente a espera do CLI após submissão; o acompanhamento foi realizado por consultas de status/logs, **sem repetir o comando de build**. Registro local exclusivo da tentativa em `.expo/v6-build/submission-attempt.json`; uma nova criação desse registro falha. Nenhum comando de instalação/adb/build:run foi executado.
+
+Build ID: **`fa5a4f81-6b19-4231-b269-2464f8b7828b`**. Submissão em **22/11/2026 às 15:57:27 (São Paulo)**.
+
+[Registro oficial do EAS](https://expo.dev/accounts/danielsln/projects/wish/builds/fa5a4f81-6b19-4231-b269-2464f8b7828b).
+
+**Resultado: FINISHED — sucesso. APK v6 APTA PARA INSTALAÇÃO como atualização da v5, para validação física do proprietário.** Essa classificação corresponde às verificações técnicas descritas abaixo; não é aprovação de execução/UX no Android nem verificação criptográfica integral independente da assinatura.
+
+Conclusão informada pelo EAS: **22/11/2026, 16:13:10 (São Paulo)**.
+
+[Baixar APK oficial](https://expo.dev/artifacts/eas/hOoITWPw6torwUwudhiR1bh32qvlvtVKACSfMylIoYA.apk) · [Ver build no EAS](https://expo.dev/accounts/danielsln/projects/wish/builds/fa5a4f81-6b19-4231-b269-2464f8b7828b).
+
+| Verificação do artefato real | Resultado |
+| --- | --- |
+| Nome de versão / versionCode no AndroidManifest.xml | **1.0.0 / 6** |
+| Package no manifesto | **com.danielsln.wish** |
+| Perfil e distribuição do registro EAS | **preview / INTERNAL**, artefato .apk, não AAB |
+| Release / standalone | Manifesto sem debuggable ativo, zero componentes dev-launcher, bundle embutido e developmentClient false no perfil preservado |
+| SDK Android no manifesto | minSdk 24, targetSdk 36; EAS SDK 58.0.0 |
+| Arquivo | **106.684.378 bytes**, ZIP com 1324 entradas e classes.dex |
+| Bundle embutido | assets/index.android.bundle, **2.711.676 bytes** |
+| Certificado público | **Idêntico à fingerprint da v5 e da credencial padrão existente** |
+| Integrações experimentais | Zero marcadores SerpApi/cloudflare-gateway/search-gateway/product-confidence/personal-worker no bundle extraído; produção sem imports desses experimentos |
+| Dispositivo do proprietário | **Nenhuma instalação, exclusão, limpeza ou alteração de dados** |
+
+Certificado público SHA-256, extraído do APK Signing Block v2 da **APK final baixada do EAS**:
+
+```text
+14028f2c74032b191145bff7206d0c5caae227fa827dd802984e87a682e42103
+```
+
+SHA-256 **do arquivo APK**, distinto do certificado:
+
+```text
+e717bde39011ccdd380870401a07043c3fa3156a26a918a84db1ad5b8bfeec5f
+```
+
+A APK foi baixada para armazenamento local ignorado pelo Git; não foi adicionada ao repositório. O manifesto binário e o certificado foram lidos com ferramentas locais de leitura, sem instalar bibliotecas. O leitor de manifesto foi conferido também contra a APK v4 já existente (versionCode 4, package/versão conhecidos). Isso não substitui apksigner ou a validação física.
+
+**Verificação integral da assinatura:** não executada, pois apksigner/jarsigner não estavam disponíveis nas ferramentas verificadas. A impressão digital coincidente, o manifesto e a build oficial são as evidências utilizadas; não se afirma ter validado criptograficamente todo o conteúdo da APK. Não houve divergência de certificado/package/versionCode que exigisse bloquear a indicação do artefato oficial.
+
+### Cota confirmada após a build
+
+Nova consulta autenticada ao EAS após FINISHED: plano **Free**, Android **6/15 usadas — 9 gratuitas restantes**, total **6/30**. Uso excedente/custo excedente e estimativa total continuam **zero**, addons vazios. Renovação permanece **30/11/2026 às 21h (São Paulo)**.
+
+Comparação do histórico remoto antes/depois: **cinco → seis builds Android**, exatamente um ID novo, o informado acima. A variação de uso gratuito também foi **5 → 6**. Portanto, esta autorização consumiu **uma build gratuita**, sem nova tentativa automática, cobrança, plano pago ou método de pagamento adicionado.
+
+O aplicativo instalado deve ser a v5 oficial com a assinatura conferida. Para testar, instalar a v6 **como atualização**, sem desinstalar nem limpar dados. Preservação real dos dados e funcionamento no telefone permanecem pendentes do checklist abaixo.
+
+### Avisos e limites
+
+- Expo Doctor remoto: **19/20**, pelas mesmas seis divergências conhecidas. Nenhum upgrade ou supressão para contornar avisos.
+- Logs de instalação remota das dependências já declaradas mostraram depreciações de uuid@3.4.0 e eslint@9.39.5; não foram adicionadas bibliotecas nem alterados manifest/lockfile de dependências.
+- Fingerprint local levou mais tempo que o esperado, mas concluiu. Não foi desativado nem motivou nova submissão.
+- Image/Node remotos continuam automáticos conforme perfil preservado. A build usa o código/commit informado; não é garantia de reprodução binária de builds antigas.
+- Verificação do certificado público é distinta de verificação integral da assinatura/conteúdo. Não foram encontrados apksigner/jarsigner disponíveis nas ferramentas locais verificadas, e não houve instalação de ferramentas para suprir a ausência. Essa verificação integral permanece **não executada**; não se declara equivalente a extrair fingerprint ou calcular hash do arquivo.
+- Nenhum teste físico ou instalação foi feito. As 428 aprovações da Fase 8.0 e as verificações web não são validação Android desta APK. TypeScript e ESLint foram reexecutados nesta execução e passaram.
+- Gateway/SerpApi permanecem suspensos/NO-GO; fontes experimentais versionadas podem estar no arquivo de fontes de build, mas não são integração ao aplicativo. Estados, ferramentas privadas e credenciais locais permanecem ignorados.
+- SQLite v5, migrações/backup, desejos, categorias, fotos, ofertas, notas, comprados e preferências não foram abertos/modificados pelo agente. Main e PR #5 preservados; PR #8 em rascunho, sem merge/rebase. A migração histórica v4→v5 não recebeu aprovação física.
+
+### Teste físico resumido — pendente do proprietário
+
+1. Instalar somente o artefato oficial verificado como atualização sobre a v5; **não desinstalar/limpar dados**. Comparar desejos, categorias, fotos privadas, ofertas, notas, comprados e tema antes/depois; fechar e reabrir.
+2. Importação lenta: preencher durante consulta, cancelar/repetir/trocar A por B; respostas atrasadas não sobrescrevem campos, imagem ou produto salvo. Editar nome conserva categoria; cancelar edição restaura a prévia.
+3. Desejar: salvar sem preço/imagem, duplo toque produz um registro, falha permite retry preservando dados; retorno à lista correto.
+4. Galeria: escolher/cancelar/confirmar/substituir/remover e reabrir; foto local funciona em modo avião sem deformação.
+5. Comprado some de Início/Categorias, aparece em Comprados e pode voltar para pendente na categoria correta.
+6. Conferir PIX/cupom explícito/sem final/parcelas e ofertas manuais; condicionais separados e preço original preservado. Não interpretar bloqueio de loja como preço confirmado.
+7. Claro/escuro/automático, fonte ampliada/TalkBack, cinco destinos, teclado e rolagem; suspender/retomar. Em modo avião, abrir APK e conferir catálogo, fotos locais e edições persistentes.
+
+Ver também o checklist detalhado da seção 8. Se houver incompatibilidade de instalação, erro de banco ou perda aparente, parar e preservar a instalação; não desinstalar, limpar armazenamento ou tentar downgrade de banco. Aguardar retorno físico antes de novas alterações/fases.
+
+
+---
+
+<details>
+<summary>Registro histórico: preparação documental aprovada antes da autorização de build</summary>
+
 
 Data: **22/11/2026**, America/Sao_Paulo. Base conferida: `e7f2c010ee185a31e7b176f35a0073df13ace683`, conclusão da Fase 8.0.
 
@@ -137,3 +248,5 @@ Executar somente após autorização e obtenção da APK correta. Registrar apar
 Em perda aparente de dados, falha de banco ou assinatura incompatível: parar, preservar a instalação e relatar. Não desinstalar, limpar armazenamento, reduzir versão do banco ou tentar APK antiga sobre banco incompatível.
 
 **Conclusão: preparação APROVADA, com limites explicitados. Aguardar autorização para mudar versionCode e, separadamente ou de forma explícita conjunta, executar uma futura build.**
+
+</details>
