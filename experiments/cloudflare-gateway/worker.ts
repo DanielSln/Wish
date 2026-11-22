@@ -1,8 +1,9 @@
+import { response, failure, read } from './boundary.ts';
 import { createHash } from 'node:crypto';
 import { SearchGateway } from '../search-gateway/gateway.ts';
 import { MockProvider } from '../search-gateway/provider.ts';
 import { fingerprint, validate } from '../search-gateway/validation.ts';
-import { GatewayError, STATUS, type Snapshot, type GatewayResponse, type ErrorCode } from '../search-gateway/contracts.ts';
+import { GatewayError, type Snapshot, type GatewayResponse, type ErrorCode } from '../search-gateway/contracts.ts';
 import { DurableStore } from './store.ts';
 import type { Environment, State, Session } from './runtime.ts';
 const ACCOUNT_COORDINATOR = 'simulated-serpapi-account-global-v1';
@@ -27,49 +28,6 @@ function authorized(request: Request, env: Environment): string {
     if (!s)
         throw new GatewayError('UNAUTHORIZED');
     return s.owner;
-}
-function response(data: unknown, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } }); }
-function failure(e: unknown) { const code = e instanceof GatewayError ? e.code : 'UNAVAILABLE'; return response({ error: code, simulation: true }, STATUS[code]); }
-async function read(request: Request): Promise<unknown> {
-    if (request.headers.get('content-type') !== 'application/json')
-        throw new GatewayError('INVALID_REQUEST');
-    if (Number(request.headers.get('content-length') ?? 0) > 32768)
-        throw new GatewayError('TOO_LARGE');
-    const reader = request.body?.getReader();
-    if (!reader)
-        throw new GatewayError('INVALID_REQUEST');
-    const parts: Uint8Array[] = [];
-    let bytes = 0;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-        return await Promise.race([(async () => {
-                for (;;) {
-                    const { done, value } = await reader.read();
-                    if (done)
-                        break;
-                    bytes += value.length;
-                    if (bytes > 32768)
-                        throw new GatewayError('TOO_LARGE');
-                    parts.push(value);
-                }
-                const all = new Uint8Array(bytes);
-                let at = 0;
-                for (const p of parts) {
-                    all.set(p, at);
-                    at += p.length;
-                }
-                try {
-                    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(all)) as unknown;
-                }
-                catch {
-                    throw new GatewayError('INVALID_REQUEST');
-                }
-            })(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new GatewayError('TIMEOUT')), 2000); })]);
-    }
-    finally {
-        clearTimeout(timer);
-        void reader.cancel().catch(() => { });
-    }
 }
 /** No deployment manifest. Ingress is meaningful only in the isolated harness. */
 export default {
@@ -118,10 +76,13 @@ export class AccountCoordinator {
                     await new Promise<void>((resolve, reject) => {
                         const abort = () => reject(new GatewayError('CANCELLED'));
                         signal.addEventListener('abort', abort, { once: true });
-                        gate.then(() => { signal.removeEventListener('abort', abort); if (signal.aborted)
-                            abort();
-                        else
-                            resolve(); });
+                        gate.then(() => {
+                            signal.removeEventListener('abort', abort);
+                            if (signal.aborted)
+                                abort();
+                            else
+                                resolve();
+                        });
                     });
                 }
                 if (env.MOCK_DETAILS_FAILURE === 'yes' && engine === 'google_immersive_product')
@@ -169,7 +130,7 @@ export class AccountCoordinator {
                 // Never reissue an in-flight/uncertain request after crashes. Another client can use a new id for cache/singleflight.
                 throw new GatewayError(previous.state === 'uncertain' ? 'BUDGET_INCONSISTENT' : 'REQUEST_CONFLICT');
             }
-            if (Number(this.store.q('SELECT count(*) n FROM c_request')[0].n) >= 256)
+            if (Number(this.store.q('SELECT count(*) n FROM c_request')[0].n) >= this.requestLimit())
                 throw new GatewayError('RATE_LIMITED');
             this.store.q("INSERT INTO c_request VALUES(?,?,'pending',NULL)", id, key);
             try {
@@ -193,6 +154,7 @@ export class AccountCoordinator {
             return failure(e);
         }
     }
+    requestLimit(): number { return 256; }
     control(input: unknown): Response {
         if (!input || typeof input !== 'object' || !('action' in input))
             throw new GatewayError('INVALID_REQUEST');
