@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "decision": "NO_GO",
+  "productionApproved": false,
+  "items": [
+    {"id":"AUTH-REVIEW","file":"personal-auth.ts","marker":"wish-personal-v1","replace":"Review independente do protocolo próprio ou autenticação gerenciada real aprovada; o laboratório não certifica produção."},
+    {"id":"LAB-FIXTURES","file":"operator-fixtures.ts","marker":"LAB ONLY","replace":"Remover fixtures mutantes e diagnósticos/release fora dos fences da entrada que for exposta."},
+    {"id":"LAB-PRIVATE-ROUTES","file":"personal-worker.ts","marker":"/operator/test","replace":"Retirar operador simulado e endpoints de teste; redesenhar administração autenticada/auditável separada."},
+    {"id":"LEGACY-PROFILE","file":"worker.ts","marker":"/__egress-probe","replace":"Não publicar perfil legado, bearers sintéticos, probe de saída ou controles __test."},
+    {"id":"SYNTHETIC-OPERATOR","file":"personal-harness.mjs","marker":"OPERATOR_HASH","replace":"Substituir capacidades geradas pelo harness por identidade e recuperação administrativas aprovadas; nunca embarcar o harness no cliente."},
+    {"id":"INDEPENDENT-ANCHOR","file":"personal-harness.mjs","marker":"witnessPath","replace":"Âncora fora de todo domínio de restauração e credenciais administrativas do serviço; arquivo local ou outro DO restaurável junto não resolve."},
+    {"id":"PROVIDER-EVIDENCE","file":"personal-worker.ts","marker":"externalEvidenceRequired","replace":"Protocolo autenticado de reservas incertas, rollover e restauração; nenhum receipt inventado ou liberação por calendário."},
+    {"id":"FIXED-PERSONAL-OWNER","file":"personal-worker.ts","marker":"personal-owner","replace":"Mapear conta/owner e dispositivos a identidades autenticadas de servidor, sem aceitar owner/namespace escolhidos pelo cliente."},
+    {"id":"LOCAL-ONLY-INGRESS","file":"personal-worker.ts","marker":"127.0.0.1","replace":"Criar entrada produtiva revisada com TLS, audience, limites e autorização; não apenas remover checagem de loopback."},
+    {"id":"MOCK-ONLY","file":"worker.ts","marker":"new MockProvider","replace":"Provedor real permanece desabilitado até autorização e todas as evidências de consumo/segredos/egress estarem aprovadas."},
+    {"id":"FREE-MEASUREMENTS","file":"build.mjs","marker":"metafile","replace":"Métricas remotas autorizadas de CPU, startup, memória, duração e SQL e política sem cobrança; bundle local não certifica Free."}
+  ]
+}

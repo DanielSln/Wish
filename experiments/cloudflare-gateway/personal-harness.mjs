@@ -17,7 +17,7 @@ export async function personalRuntime(options = {}) {
             await file.close();
         }
     }
-    const fault = { down: false, loseAck: false };
+    const fault = { down: false, loseAck: false, delayAckMs: 0, oversized: false, holdNextAck: false, ackHeld: false, releaseAck: () => { } };
     const witness = async (request) => {
         if (fault.down)
             return new Response('UNAVAILABLE', { status: 503 });
@@ -42,6 +42,16 @@ export async function personalRuntime(options = {}) {
                 fault.loseAck = false;
                 return new Response('ACK_LOST', { status: 503 });
             }
+            if (fault.holdNextAck) {
+                fault.holdNextAck = false;
+                fault.ackHeld = true;
+                await new Promise(resolve => { fault.releaseAck = resolve; });
+                fault.ackHeld = false;
+            }
+            if (fault.delayAckMs)
+                await new Promise(resolve => setTimeout(resolve, fault.delayAckMs));
+            if (fault.oversized)
+                return new Response('x'.repeat(2048));
             return Response.json({ sequence: next.sequence });
         }
         catch {
@@ -54,7 +64,7 @@ export async function personalRuntime(options = {}) {
             }
         }
     };
-    const r = await runtime({ ...options, personal: true, internal: options.context?.internal, snapshot: options.context?.snapshot, serviceBindings: { WITNESS: witness }, bindings: { LINEAGE: context.lineage, OPERATOR_HASH: hash(context.operator), RECOVERY_HASH: hash(context.recovery), ...(options.restored ? { RESTORE_DECLARED: 'yes' } : {}), ...(options.sessionMs ? { AUTH_SESSION_MS: String(options.sessionMs) } : {}) } });
+    const r = await runtime({ ...options, personal: true, internal: options.context?.internal, snapshot: options.context?.snapshot, serviceBindings: { WITNESS: witness }, bindings: { LINEAGE: context.lineage, OPERATOR_HASH: hash(context.operator), RECOVERY_HASH: hash(context.recovery), ...(options.restored ? { RESTORE_DECLARED: 'yes' } : {}), ...(options.witnessTimeoutMs ? { WITNESS_TIMEOUT_MS: String(options.witnessTimeoutMs) } : {}), ...(options.sessionMs ? { AUTH_SESSION_MS: String(options.sessionMs) } : {}) } });
     context.internal = r.internal;
     context.snapshot = r.snapshot;
     const namespace = await r.mf.getDurableObjectNamespace('COORDINATOR'), stub = namespace.get(namespace.idFromName('simulated-serpapi-account-global-v1'));
