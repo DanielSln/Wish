@@ -1,5 +1,7 @@
 # Wish
 
+**Fase 9.0 implementada e validada localmente:** backup portátil e recuperação completa em Configurações. [Formato, segurança, testes e checklist Android](docs/PHASE-9-0-LOCAL-BACKUP.md). Teste físico desta função pendente; a APK v6 existente continua sendo a referência estável, sem esta funcionalidade. Nenhuma nova APK foi gerada.
+
 **Fase 8.1 encerrada: APK preview v6 aprovada fisicamente pelo proprietário, 10/10 testes aprovados e nenhuma correção emergencial identificada.** Wish **1.0.0 / versionCode 6 / SQLite v5**, na branch `feature/android-preview-splash`, PR #8 aberto/em rascunho e sem merge. [Resultados físicos e evidências da build](docs/PHASE-8-1-APK-V6-PREPARATION.md). Os testes foram relatados pelo proprietário; não significam importação universal nem aprovação de migrações históricas. Gateway e SerpApi continuam suspensos: [parecer NO-GO da Fase 7.5](docs/PHASE-7-5-REMOTE-READINESS.md). [Implementação e validação técnica da Fase 8.0](docs/PHASE-8-0-IMPORT-UX.md).
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
@@ -10,11 +12,12 @@ Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript
 | --- | --- |
 | Fase 8.0 — importação e experiência | Implementada; 428 testes e validação web documentados na entrega técnica. |
 | Fase 8.1 — APK preview v6 | **Encerrada: 10/10 físicos aprovados pelo proprietário.** Build `fa5a4f81-6b19-4231-b269-2464f8b7828b`, commit compilado `b0ce343ff271ba62df29789d31ce96d6b428890f`. |
+| Fase 9.0 — backup local | Implementada; 477 testes Node/runtime e 17 suítes web aprovados. Android físico pendente; sem nova APK. |
 | Correção emergencial | Nenhuma identificada no retorno físico informado. |
 | Gateway / SerpApi | Experimentos preservados, **NO-GO** para implantação; integração suspensa. |
 | Supabase / PR #5 | Separado e adiado; sem integração nesta fase. |
 | Migração histórica SQLite v4→v5 | Continua sem validação física registrada. |
-| Próxima fase, nova build ou merge | **Aguardar autorização explícita**; nenhuma nova etapa iniciada. |
+| Próxima fase, nova build ou merge | **Aguardar autorização explícita** após a entrega da Fase 9.0. |
 
 ## Executar no Android com Expo Go
 
