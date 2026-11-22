@@ -1,8 +1,20 @@
 # Wish
 
-Fase 8.0 na branch `feature/android-preview-splash`, PR #8 aberto/em rascunho: importação não bloqueante, campos manuais protegidos, imagens antes do cadastro e comprados separados da lista de desejos. Identidade azul-claro e temas preservados. [Relatório, testes, capturas e checklist físico](docs/PHASE-8-0-IMPORT-UX.md). SQLite v5 e Wish 1.0.0/versionCode 5 intactos; nenhuma APK/EAS Build ou merge. Gateway e SerpApi continuam suspensos: [parecer NO-GO da Fase 7.5](docs/PHASE-7-5-REMOTE-READINESS.md). Os relatos por fase abaixo registram a evolução; o relatório 8.0 descreve o estado atual.
+**Fase 8.1 encerrada: APK preview v6 aprovada fisicamente pelo proprietário, 10/10 testes aprovados e nenhuma correção emergencial identificada.** Wish **1.0.0 / versionCode 6 / SQLite v5**, na branch `feature/android-preview-splash`, PR #8 aberto/em rascunho e sem merge. [Resultados físicos e evidências da build](docs/PHASE-8-1-APK-V6-PREPARATION.md). Os testes foram relatados pelo proprietário; não significam importação universal nem aprovação de migrações históricas. Gateway e SerpApi continuam suspensos: [parecer NO-GO da Fase 7.5](docs/PHASE-7-5-REMOTE-READINESS.md). [Implementação e validação técnica da Fase 8.0](docs/PHASE-8-0-IMPORT-UX.md).
 
 Aplicativo pessoal de lista de desejos com React Native, Expo SDK 58, TypeScript e Expo Router.
+
+## Status e roadmap
+
+| Etapa | Estado |
+| --- | --- |
+| Fase 8.0 — importação e experiência | Implementada; 428 testes e validação web documentados na entrega técnica. |
+| Fase 8.1 — APK preview v6 | **Encerrada: 10/10 físicos aprovados pelo proprietário.** Build `fa5a4f81-6b19-4231-b269-2464f8b7828b`, commit compilado `b0ce343ff271ba62df29789d31ce96d6b428890f`. |
+| Correção emergencial | Nenhuma identificada no retorno físico informado. |
+| Gateway / SerpApi | Experimentos preservados, **NO-GO** para implantação; integração suspensa. |
+| Supabase / PR #5 | Separado e adiado; sem integração nesta fase. |
+| Migração histórica SQLite v4→v5 | Continua sem validação física registrada. |
+| Próxima fase, nova build ou merge | **Aguardar autorização explícita**; nenhuma nova etapa iniciada. |
 
 ## Executar no Android com Expo Go
 
@@ -19,7 +31,7 @@ npm start -- --go
 
 Esta é a branch de revisão atual (PR #8). Não alterne para `main` ou branches anteriores com catálogo v5 sem confirmar compatibilidade; esta fase não faz merge. Em uma cópia existente, preserve alterações locais, entre na pasta Wish e siga o guia antes de trocar de branch. Abra o QR Code no Expo Go, com celular e computador na mesma rede. Alternativa de conexão: `npm start -- --go --tunnel` (o túnel padrão desta CLI exige conta Expo). A CLI também aceita `--tunnel ngrok` como opção legada; sua disponibilidade depende da rede e do serviço.
 
-Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. A [APK preview v2](docs/PHASE-6-1-APK-V2.md) já foi gerada; Supabase permanece adiado; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
+Consulte [o guia completo para Windows e Expo Go](docs/EXPO-GO-TESTING.md): instalação da versão compatível, atualização, rede, testes e limites de uso offline. O servidor do Codex Web não é o servidor do seu computador. A [APK preview v6](docs/PHASE-8-1-APK-V6-PREPARATION.md) foi concluída e aprovada fisicamente pelo proprietário; Supabase permanece adiado; o [PR #5](https://github.com/DanielSln/Wish/pull/5) permanece separado e não é necessário para testar.
 
 Navegador: `npm run web`. O SQLite web é experimental e precisa de contexto seguro (localhost ou HTTPS), WebAssembly, SharedArrayBuffer e dos cabeçalhos COOP/COEP configurados em metro.config.js. Em hospedagem, os mesmos cabeçalhos precisam ser enviados pelo servidor. Dados de navegador e celular ficam em bancos separados.
 
@@ -86,7 +98,7 @@ Detalhes, prévias, testes e limites: [docs/VISUAL-REFRESH.md](docs/VISUAL-REFRE
 
 ## Testar em Android real
 
-Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A configuração atual e a APK v2 estão em `feature/android-preview-splash`, PR #8; [resultado e instalação](docs/PHASE-6-1-APK-V2.md). Não gerar outra build sem autorização.
+Roteiro de instalação, Expo Go, geração gratuita de APK sem Play Store, persistência, modo avião, categorias, comprados e temas: [docs/ANDROID-TESTING.md](docs/ANDROID-TESTING.md). A configuração atual e a APK v6 estão em `feature/android-preview-splash`, PR #8; [resultado, validação física e instalação](docs/PHASE-8-1-APK-V6-PREPARATION.md). Não gerar outra build sem autorização.
 
 Prontidão da arquitetura para a próxima fase: [docs/PHASE-4-READINESS.md](docs/PHASE-4-READINESS.md). Supabase continua apenas planejado.
 

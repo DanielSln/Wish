@@ -1,10 +1,42 @@
 # Fase 8.1 — APK preview v6: preparação, compilação e verificação
 
-**Situação atual: APK v6 APTA PARA INSTALAÇÃO para teste físico. Uma única build gratuita concluída; certificado/package/versionCode conferidos. A validação física e a verificação integral independente da assinatura não foram executadas.**
+**Situação atual: Fase 8.1 ENCERRADA — APROVADA FISICAMENTE PELO PROPRIETÁRIO, 10/10 testes aprovados. Nenhuma correção emergencial foi identificada no retorno informado.**
+
+## Encerramento e validação física informada
+
+Registro recebido em **22/11/2026 (America/Sao_Paulo)**. Fonte: relato explícito do proprietário nesta conversa; os testes físicos foram realizados por ele, **não pelo agente**. Não foram informados modelo do aparelho, versão Android ou data/hora individual de execução; não foram inventados esses dados.
+
+Artefato validado pelo proprietário: **Wish 1.0.0 / versionCode 6**, Build ID **`fa5a4f81-6b19-4231-b269-2464f8b7828b`**, commit compilado **`b0ce343ff271ba62df29789d31ce96d6b428890f`**. [Build oficial](https://expo.dev/accounts/danielsln/projects/wish/builds/fa5a4f81-6b19-4231-b269-2464f8b7828b).
+
+| # | Teste físico relatado | Resultado |
+| --- | --- | --- |
+| 1 | Atualização sem perda de dados | **APROVADO** |
+| 2 | Importação durante carregamento | **APROVADO** |
+| 3 | Cancelamento e troca de links | **APROVADO** |
+| 4 | Preservação das edições | **APROVADO** |
+| 5 | Botão Desejar | **APROVADO** |
+| 6 | Imagem pela galeria | **APROVADO** |
+| 7 | Categorias e Comprados | **APROVADO** |
+| 8 | PIX, cupons e ofertas | **APROVADO** |
+| 9 | Teclado e aparência | **APROVADO** |
+| 10 | Funcionamento offline | **APROVADO** |
+
+**Total informado: 10 aprovados, 0 reprovados.** Atualização, persistência e fluxos acima foram aprovados pelo proprietário no contexto da APK v6 testada. **Nenhuma correção emergencial foi identificada**; este encerramento é exclusivamente documental e não afirma ausência de todo defeito possível.
+
+### Limites preservados no encerramento
+
+- A aprovação de importação e preços cobre os cenários testados pelo proprietário; **não declara importação universal**, suporte automático novo a lojas, estoque/preço de checkout garantidos ou cobertura de todas as variantes. Bloqueios, redirecionamentos e páginas dependentes de JavaScript continuam possíveis; Shopee/AliExpress permanecem manuais conforme a política atual.
+- A atualização sem perda de dados **não aprova a migração histórica SQLite v4→v5**, que continua sem validação física registrada. SQLite v5 e suas migrações não foram alterados.
+- A aprovação de teclado/aparência não inventa uma matriz de aparelhos/fontes/TalkBack não informada. Fotos locais e operações offline testadas não tornam imagens remotas/importação independentes de rede.
+- A verificação integral independente da assinatura por apksigner/jarsigner permanece **não executada** neste ambiente. A instalação física aprovada não é registro de execução dessas ferramentas; a comparação do certificado da build permanece a evidência técnica documentada abaixo.
+- **Gateway experimental permanece NO-GO**; SerpApi e integração remota continuam suspensas. Cloudflare e Supabase não foram integrados. [Parecer da Fase 7.5](PHASE-7-5-REMOTE-READINESS.md).
+- A cota e os resultados de build registrados abaixo são históricos da compilação; não foram reconsultados neste encerramento. Nenhuma nova APK/EAS Build, consulta SerpApi, instalação no telefone ou limpeza de dados foi realizada.
+
+Fase 8.1 encerrada. PR #8 deve permanecer aberto/em rascunho e **sem merge**. Aguardar autorização explícita antes de qualquer nova fase, correção, integração ou compilação. As seções seguintes preservam a evidência técnica da compilação e a preparação anterior; pendências físicas ali descritas registram o estado **antes deste retorno do proprietário**, sem ampliar a cobertura dos dez testes acima.
 
 ## 9. Compilação autorizada — APK preview v6
 
-**Atualização posterior à preparação documental preservada no histórico ao final.** O proprietário autorizou explicitamente alterar 5→6 e executar uma única build gratuita, sem novas credenciais, dependências, instalação no aparelho ou merge.
+**Registro histórico da compilação, anterior à validação física acima.** Atualização posterior à preparação documental preservada no histórico ao final. O proprietário autorizou explicitamente alterar 5→6 e executar uma única build gratuita, sem novas credenciais, dependências, instalação no aparelho ou merge.
 
 ### Cota gratuita antes da alteração e submissão
 
@@ -92,7 +124,7 @@ O aplicativo instalado deve ser a v5 oficial com a assinatura conferida. Para te
 - Gateway/SerpApi permanecem suspensos/NO-GO; fontes experimentais versionadas podem estar no arquivo de fontes de build, mas não são integração ao aplicativo. Estados, ferramentas privadas e credenciais locais permanecem ignorados.
 - SQLite v5, migrações/backup, desejos, categorias, fotos, ofertas, notas, comprados e preferências não foram abertos/modificados pelo agente. Main e PR #5 preservados; PR #8 em rascunho, sem merge/rebase. A migração histórica v4→v5 não recebeu aprovação física.
 
-### Teste físico resumido — pendente do proprietário
+### Checklist físico da compilação — registro anterior ao retorno do proprietário
 
 1. Instalar somente o artefato oficial verificado como atualização sobre a v5; **não desinstalar/limpar dados**. Comparar desejos, categorias, fotos privadas, ofertas, notas, comprados e tema antes/depois; fechar e reabrir.
 2. Importação lenta: preencher durante consulta, cancelar/repetir/trocar A por B; respostas atrasadas não sobrescrevem campos, imagem ou produto salvo. Editar nome conserva categoria; cancelar edição restaura a prévia.
