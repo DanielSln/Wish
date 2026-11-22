@@ -2,7 +2,8 @@ import { assess } from '../product-confidence/engine.ts';
 import { compareProducts } from '../product-confidence/identity.ts';
 import { plainData, record } from '../product-confidence/normalize.ts';
 import { adapt, cachedCandidates } from './adapters.ts';
-import { GatewayStore } from './store.ts';
+import type { GatewayStore } from './store.ts';
+export type GatewayStorage = Pick<GatewayStore, 'rate' | 'cacheGet' | 'cachePut' | 'reserve' | 'finish'>;
 import { fingerprint, queryFor, reference, validate } from './validation.ts';
 import { GatewayError, type Engine, type GatewayResponse, type NormalizedCandidate, type Operation, type SearchProvider } from './contracts.ts';
 interface Job {
@@ -29,10 +30,10 @@ export class SearchGateway {
         controllers: Set<AbortController>;
     }>();
     readonly clock: () => number;
-    readonly store: GatewayStore;
+    readonly store: GatewayStorage;
     readonly provider: SearchProvider;
     readonly options: GatewayOptions;
-    constructor(store: GatewayStore, provider: SearchProvider, options: GatewayOptions = {}) {
+    constructor(store: GatewayStorage, provider: SearchProvider, options: GatewayOptions = {}) {
         this.store = store;
         this.provider = provider;
         this.options = Object.freeze({ ...options });
