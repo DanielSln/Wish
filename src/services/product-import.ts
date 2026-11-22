@@ -105,8 +105,9 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
   if (products.length > 1) { for (const key of Object.keys(meta)) if (key.startsWith('product:')) delete meta[key]; imageMetas.length = 0; }
   const item = selectedProduct ?? {};
   const name = text(item.name, 160) || text(meta['og:title'], 160);
-  if (!products.length && /(?:enable JavaScript|ative o JavaScript|habilite o JavaScript)/i.test(text(markup, MAX_HTML))) throw new Error('Esta página depende de JavaScript. Complete os dados manualmente.');
-  if (!products.length && /(?:continuar comprando|verify you are human|confirme que voc[eê] [eé] humano|robot check|captcha)/i.test(text(markup, MAX_HTML))) throw new Error('A loja bloqueou a consulta. Complete os dados manualmente.');
+  const pageText = !products.length ? text(markup, MAX_HTML) : '';
+  if (!products.length && /(?:enable JavaScript|ative o JavaScript|habilite o JavaScript)/i.test(pageText)) throw new Error('Esta página depende de JavaScript. Complete os dados manualmente.');
+  if (!products.length && /(?:continuar comprando|verify you are human|confirme que voc[eê] [eé] humano|robot check|captcha)/i.test(pageText)) throw new Error('A loja bloqueou a consulta. Complete os dados manualmente.');
   if (!products.length && (new URL(source).pathname === '/' || meta['og:type']?.toLowerCase() === 'website')) throw new ProductMetadataUnavailable();
   const prices = extractPrices(item, meta, source, now, ambiguous ? null : nextData, text(markup.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ''), MAX_HTML));
   const selected = importPriceSummary(prices).lowest;
@@ -130,13 +131,13 @@ export function extractProduct(html: string, sourceUrl: string, now = Date.now()
     ...(ambiguous ? ['Produto ou variante não confirmados; imagem e preço não foram preenchidos.'] : []),
     ...(!name ? ['O nome não foi informado pela página. Preencha-o para desejar.'] : []),
     ...(knownPrice === null ? ['Preço em reais não confirmado; preencha manualmente, se desejar.'] : []),
-    ...(!product.image_url ? ['Imagem indisponível; você pode adicionar uma URL no formulário.'] : []),
+    ...(!product.image_url ? ['Imagem indisponível; use Adicionar imagem para escolher outra.'] : []),
   ] };
 }
 
 // A streaming, redirect-aware transport is mandatory. UI uses expo/fetch on every platform.
 export type ImportRequest = (url: string, init: RequestInit) => Promise<Response>;
-export async function importProduct(value: string, signal: AbortSignal | undefined, request: ImportRequest): Promise<ImportPreview> {
+export async function importProduct(value: string, signal: AbortSignal | undefined, request: ImportRequest, progress?: (stage: 'fetching'|'reading'|'extracting')=>void): Promise<ImportPreview> {
   let url = importDestination(value);
   const trustedStart = url;
   const shortHost = new URL(url).hostname;
@@ -146,7 +147,8 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) controller.abort();
-  const timeout = setTimeout(abort, 12000);
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; abort(); }, 12000);
   try {
     if (controller.signal.aborted) throw new Error('Consulta cancelada.');
     const seen = new Set<string>();
@@ -155,6 +157,7 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
       if (controller.signal.aborted) throw new Error('Consulta cancelada.');
       if (seen.has(url)) throw new Error('O link curto entrou em um ciclo. Use o cadastro manual.');
       seen.add(url);
+      progress?.('fetching');
       response = await request(url, { signal: controller.signal, credentials: 'omit', redirect: 'manual', headers: { Accept: 'text/html' } });
       if (response.type === 'opaqueredirect' || response.status === 0) throw new Error('O navegador não permite conferir este redirecionamento. Abra o link no Android ou cadastre manualmente.');
       if (response.url && importDestination(response.url) !== url) { await response.body?.cancel(); throw new Error('O endereço da resposta mudou sem validação. Use o cadastro manual.'); }
@@ -179,6 +182,7 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
     if (Number(response.headers.get('content-length')) > MAX_HTML) throw new Error('A página é muito grande para importar. Use o cadastro manual.');
     const reader = response.body?.getReader();
     if (!reader) throw new Error('A consulta não disponibilizou leitura limitada. Use o cadastro manual.');
+    progress?.('reading');
     const bytes = new Uint8Array(MAX_HTML);
     let size = 0;
     try {
@@ -191,6 +195,7 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
         size += chunk.byteLength;
       }
       if (controller.signal.aborted) throw new Error('Consulta cancelada.');
+      progress?.('extracting');
       const result = extractProduct(new TextDecoder().decode(bytes.subarray(0, size)), url);
       result.resolved_url = url;
       result.product.original_url = original;
@@ -200,7 +205,8 @@ export async function importProduct(value: string, signal: AbortSignal | undefin
       reader.releaseLock();
     }
   } catch (error) {
-    if (controller.signal.aborted) throw new Error('Importação cancelada ou tempo esgotado. Tente novamente ou cadastre manualmente.');
+    if (timedOut) throw new Error('Importação: tempo esgotado após 12 segundos.');
+    if (controller.signal.aborted) throw new Error('Consulta cancelada.');
     if (error instanceof TypeError) throw new Error('Não foi possível acessar a loja. Confira a conexão; a loja pode bloquear importação ou acesso pelo navegador. Use o cadastro manual.');
     throw error;
   } finally {

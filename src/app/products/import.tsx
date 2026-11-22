@@ -1,134 +1,82 @@
-import { suggestCategory } from '@/domain/category-suggestion';
-import { importFailureMessage } from '@/services/import-messages';
-import { sharedLinks } from '@/services/import-links';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
-import { ActivityIndicator, Text, TextInput, View } from 'react-native';
-import { ImportPriceSummary } from '@/components/import-price-summary';
-import { Disclosure } from '@/components/disclosure';
-import { KeyboardScrollView } from '@/components/keyboard-scroll-view';
-import { ProductForm } from '@/components/product-form';
-import { ProductImage } from '@/components/product-image';
-import { Icon } from '@/components/brand';
-import { Button, Chip, useUI } from '@/components/ui';
-import { priorityLabels, type Category, type Priority, type ProductInput } from '@/domain/product';
-import { createSaveGate, importDraft, validateImportDraft } from '@/domain/import-draft';
-import { useProducts } from '@/data/use-products';
-import { importProduct, manualProductFromLink, linkImportPlan, type ImportPreview } from '@/services/product-import';
-
-export default function ImportScreen() {
-  const { colors, styles } = useUI();
-  const repo = useProducts();
-  const params = useLocalSearchParams<{ url?: string }>();
-  const [url, setUrl] = useState(typeof params.url === 'string' ? params.url : '');
-  const [choice, setChoice] = useState('');
-  const links = useMemo(() => sharedLinks(url), [url]);
-  const selectedUrl = useMemo(() => links.length === 1 ? links[0] : links.includes(choice) ? choice : '', [links, choice]);
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
-  const [draft, setDraft] = useState<ProductInput | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [initial, setInitial] = useState<Partial<ProductInput> | null>(null);
-  const [manualNotice, setManualNotice] = useState('');
-  const [error, setError] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const active = useRef<AbortController | null>(null);
-  const saveGate = useRef(createSaveGate());
-  const submitting = useRef(false);
-  const categoryChosen = useRef(false);
-  const attempted = useRef<string | null>(null);
-  let manualOnly = false;
-  try { manualOnly = !linkImportPlan(selectedUrl).automatic; } catch {}
-  useEffect(() => () => { active.current?.abort(); active.current = null; }, []);
-
-  const load = useCallback(async (automatic = false) => {
-    if (active.current || !selectedUrl) return;
-    if (automatic && attempted.current === selectedUrl) return;
-    attempted.current = selectedUrl;
-    const controller = new AbortController(); active.current = controller;
-    setBusy(true); setError(''); setErrors({}); setPreview(null); setDraft(null);
-    try {
-      const plan = linkImportPlan(selectedUrl);
-      const result = plan.automatic
-        ? await importProduct(selectedUrl, controller.signal, expoFetch)
-        : manualPreview(manualProductFromLink(selectedUrl));
-      const cats = await repo.categories();
-      if (active.current === controller) {
-        setCategories(cats); setPreview(result); setDraft(importDraft(result.product, cats));
-        saveGate.current = createSaveGate(); categoryChosen.current = false;
-        if (!plan.automatic) setError('Consulta automática indisponível nesta loja. Complete seu desejo; o link foi preservado.');
-      }
-    } catch (e) {
-      if (active.current === controller) {
-        setError(importFailureMessage(e));
-        try {
-          const value = manualProductFromLink(selectedUrl); const cats = await repo.categories();
-          if (active.current === controller) { const result = manualPreview(value); setCategories(cats); setPreview(result); setDraft(importDraft(result.product, cats)); saveGate.current = createSaveGate(); }
-        } catch { /* Invalid URLs never become a saved link or a network request. */ }
-      }
-    } finally {
-      if (active.current === controller) { active.current = null; setBusy(false); }
-    }
-  }, [selectedUrl, repo]);
-  useEffect(() => {
-    if (initial || preview) return;
-    try { linkImportPlan(selectedUrl); } catch { return; }
-    const timer = setTimeout(() => { void load(true); }, 900);
-    return () => clearTimeout(timer);
-  }, [selectedUrl, load, initial, preview]);
-  function manual() {
-    let value: Partial<ProductInput> = {};
-    try { value = manualProductFromLink(selectedUrl); } catch {}
-    setManualNotice(value.original_url ? 'O link da loja foi preservado.' : 'Preencha seu desejo manualmente.');
-    setInitial(value);
-  }
-  async function desire() {
-    if (!draft || submitting.current) return;
-    submitting.current = true;
-    try {
-      const savedId = await saveGate.current.run(async () => {
-        setSaving(true); setError('');
-        const cats = await repo.categories();
-        setCategories(cats);
-        const next = { ...draft, name: draft.name.trim() };
-        const validation = validateImportDraft(next, cats);
-        setErrors(validation);
-        if (Object.keys(validation).length) throw new Error('Complete os campos indicados. Você também pode editar as informações.');
-        return repo.save(next);
-      });
-      if (savedId) router.replace({ pathname: '/', params: { saved: savedId } });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível salvar. Seus dados foram preservados.');
-    } finally { submitting.current = false; setSaving(false); }
-  }
-  if (initial) return <View style={{ flex: 1 }}>{!!manualNotice && <Text style={[styles.body, { padding: 12, paddingBottom: 0 }]}>{manualNotice}</Text>}<ProductForm initial={initial} returnToWishlist onCancel={() => { setInitial(null); setManualNotice(''); }} /></View>;
-  return <KeyboardScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { gap: 12, paddingTop: 12 }]}>
-    <Text style={styles.heading}>Um link, um novo desejo</Text>
-    <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!busy && !saving} onChangeText={value => { active.current?.abort(); active.current = null; setChoice(''); attempted.current = null; setUrl(value); setPreview(null); setDraft(null); setError(''); setErrors({}); }} placeholder="https://loja.com.br/produto" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={16384} />
-    {links.length > 1 && <View style={styles.card}><Text style={styles.label}>Escolha o link do produto</Text>{links.map(link => <Button key={link} title={link} variant="secondary" disabled={busy || saving} onPress={() => { setChoice(link); setPreview(null); setDraft(null); setError(''); attempted.current = null; }} />)}</View>}
-    {!preview && <Button title={busy ? 'Consultando loja…' : manualOnly ? 'Continuar cadastro' : 'Buscar informações'} disabled={busy || saving || !selectedUrl} onPress={() => { void load(); }} />}
-    {busy && <><ActivityIndicator color={colors.accent} /><Button title="Cancelar consulta" onPress={() => { active.current?.abort(); active.current = null; setBusy(false); }} /></>}
-    {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-    {!!preview && !preview.product.name && !manualOnly && <Button title="Tentar consulta novamente" variant="secondary" disabled={busy || saving} onPress={() => { void load(); }} />}
-    {preview && draft && <View style={styles.card}>
-      <ProductImage uri={draft.image_url} large compact />
-      {(!preview.product.name || errors.name) ? <View><Text style={styles.label}>Nome do produto *</Text><TextInput accessibilityLabel="Nome do produto *" editable={!saving} style={styles.input} value={draft.name} onChangeText={name => setDraft(value => value && ({ ...value, name, category_id: categoryChosen.current ? value.category_id : suggestCategory(name, categories) ?? value.category_id }))} maxLength={160} placeholderTextColor={colors.muted} />{!!errors.name && <Text style={styles.error}>{errors.name}</Text>}</View> : <Text style={styles.heading}>{draft.name}</Text>}
-      <Text style={styles.body}>{draft.store}</Text>
-      <ImportPriceSummary prices={preview.prices} />
-      <View><Text style={styles.label}>Categoria</Text><View style={styles.row}>{categories.map(category => <Chip key={category.id} title={category.name} active={draft.category_id === category.id} onPress={() => { if (!saving) { categoryChosen.current = true; setDraft(value => value && ({ ...value, category_id: category.id })); } }} />)}</View>{!draft.category_id && <Text style={styles.body}>Selecione uma categoria para desejar.</Text>}{!!errors.category_id && <Text style={styles.error}>{errors.category_id}</Text>}{categories.length === 0 && <Text style={styles.body}>Crie uma categoria em Editar informações.</Text>}</View>
-      <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(priority => <Chip key={priority} title={priorityLabels[priority]} active={draft.priority === priority} onPress={() => { if (!saving) setDraft(value => value && ({ ...value, priority })); }} />)}</View></View>
-      <Button title={saving ? 'Salvando…' : 'Desejar'} icon={<Icon name="heart" color={colors.onPrimary} size={20} />} disabled={saving} onPress={() => { void desire(); }} />
-      <Button title="Editar informações" variant="secondary" icon={<Icon name="edit" size={20} />} disabled={saving} onPress={() => { setManualNotice(''); setInitial({ ...draft }); }} />
-      {!!draft.description && <Disclosure title="Descrição"><Text style={styles.body}>{draft.description}</Text></Disclosure>}
-      <Disclosure title="Condições e origem"><Text style={styles.body}>{draft.offer_details}</Text>{preview.warnings.map(warning => <Text key={warning} style={styles.body}>{warning}</Text>)}</Disclosure>
-    </View>}
-    {!preview && <Button title="Preencher manualmente" variant="secondary" disabled={busy || saving} onPress={manual} />}
-    <Disclosure title="Sobre a importação"><Text style={styles.body}>Usamos os dados públicos disponíveis na loja, sem contornar bloqueios. Valores anunciados podem depender de pagamento, cupom e elegibilidade. Nada é salvo até tocar em Desejar ou salvar o formulário. Se a consulta falhar, continue manualmente com o link preservado.</Text></Disclosure>
-  </KeyboardScrollView>;
-}
-
-function manualPreview(value: Partial<ProductInput>): ImportPreview {
-  return { product: { name: '', description: '', image_url: '', price_cents: null, store: value.store ?? '', original_url: value.original_url ?? '', notes: '', offer_details: 'Cadastro manual. Preço não confirmado; link original preservado.' }, warnings: [], prices: { current_cents: null, original_cents: null, conditional: null, coupon: null, warnings: [], notes: '' } };
+import {useCallback,useEffect,useMemo,useRef,useState,useSyncExternalStore} from 'react';
+import {router,useLocalSearchParams,useFocusEffect} from 'expo-router';
+import {fetch as expoFetch} from 'expo/fetch';
+import {ActivityIndicator,Text,TextInput,View} from 'react-native';
+import {ImportPriceSummary} from '@/components/import-price-summary';
+import {Disclosure} from '@/components/disclosure';
+import {KeyboardScrollView} from '@/components/keyboard-scroll-view';
+import {ProductForm} from '@/components/product-form';
+import {ProductImage} from '@/components/product-image';
+import {ImageEditor} from '@/components/image-editor';
+import {Icon} from '@/components/brand';
+import {Button,Chip,TextButton,useUI} from '@/components/ui';
+import {priorityLabels,type Category,type Priority,type ProductInput} from '@/domain/product';
+import {createSaveGate,validateImportDraft} from '@/domain/import-draft';
+import {ImportSession} from '@/domain/import-session';
+import {useProducts} from '@/data/use-products';
+import {importProduct,linkImportPlan} from '@/services/product-import';
+import {importFailureMessage} from '@/services/import-messages';
+import {sharedLinks} from '@/services/import-links';
+const phaseLabels={fetching:'Consultando loja…',reading:'Recebendo informações…',extracting:'Preparando informações…'};
+export default function ImportScreen(){
+ const {colors,styles}=useUI(),repo=useProducts(),params=useLocalSearchParams<{url?:string}>();
+ const [url,setUrl]=useState(typeof params.url==='string'?params.url:''),[choice,setChoice]=useState('');
+ const links=useMemo(()=>sharedLinks(url),[url]);
+ const selectedUrl=useMemo(()=>links.length===1?links[0]:links.includes(choice)?choice:'',[links,choice]);
+ const [flow]=useState(()=>new ImportSession()),state=useSyncExternalStore(flow.subscribe,flow.getSnapshot,flow.getSnapshot);
+ const {draft,preview,phase}=state;
+ const busy=phase==='fetching'||phase==='reading'||phase==='extracting',saving=phase==='saving'||phase==='saved';
+ const [categories,setCategories]=useState<Category[]>([]),[categoryError,setCategoryError]=useState(''),[categoryRetry,setCategoryRetry]=useState(0);
+ const [initial,setInitial]=useState<Partial<ProductInput>|null>(null),[errors,setErrors]=useState<Record<string,string>>({});
+ const attempted=useRef<string|null>(null),saveGate=useRef(createSaveGate()),submitting=useRef(false);
+ let automatic=false;try{automatic=linkImportPlan(selectedUrl).automatic;}catch{}
+ useEffect(()=>{let alive=true;repo.categories().then(cats=>{if(alive){setCategories(cats);flow.setCategories(cats);setCategoryError('');}}).catch(()=>{if(alive)setCategoryError('Não foi possível carregar as categorias.');});return()=>{alive=false;};},[repo,flow,categoryRetry]);
+ useEffect(()=>{flow.select(selectedUrl);},[flow,selectedUrl]);
+ useFocusEffect(useCallback(()=>()=>{flow.cancel('');},[flow]));
+ const load=useCallback(async()=>{
+   const token=flow.begin();if(!token)return;attempted.current=token.url;
+   try{const result=await importProduct(token.url,token.signal,expoFetch,stage=>flow.progress(token,stage));flow.complete(token,result);}catch(e){flow.fail(token,importFailureMessage(e));}
+ },[flow]);
+ useEffect(()=>{if(initial||!automatic||attempted.current===selectedUrl)return;const timer=setTimeout(()=>{void load();},300);return()=>clearTimeout(timer);},[selectedUrl,automatic,initial,load]);
+ function changeUrl(value:string){if(saving||submitting.current)return;const candidates=sharedLinks(value);flow.select(candidates.length===1?candidates[0]:'');attempted.current=null;saveGate.current=createSaveGate();setChoice('');setUrl(value);setErrors({});}
+ function edit(){attempted.current=selectedUrl;const value=flow.openEditor();if(value!==null)setInitial(value);}
+ async function desire(){
+   if(submitting.current)return;const snapshot=flow.beginSave();if(!snapshot)return;submitting.current=true;
+   try{
+     const id=await saveGate.current.run(async()=>{
+       const cats=await repo.categories();setCategories(cats);
+       const next={...snapshot,name:snapshot.name.trim()},validation=validateImportDraft(next,cats);setErrors(validation);
+       if(Object.keys(validation).length)throw new Error('Complete os campos indicados para desejar.');
+       return repo.save(next);
+     });
+     if(id){flow.saved();router.replace({pathname:'/',params:{saved:id}});}
+   }catch(e){flow.saveFailed(e instanceof Error?e.message:'Não foi possível salvar. Seus campos foram preservados.');}
+   finally{submitting.current=false;}
+ }
+ if(initial)return <ProductForm initial={initial} returnToWishlist onSaved={()=>flow.saved()} onCancel={()=>{setInitial(null);flow.closeEditor();}}/>;
+ return <KeyboardScrollView showsVerticalScrollIndicator={false} style={styles.page} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content,{gap:12,paddingTop:12}]}>
+   <Text style={styles.heading}>Um link, um novo desejo</Text>
+   <TextInput accessibilityLabel="Link para importar" style={styles.input} value={url} editable={!saving} onChangeText={changeUrl} placeholder="Cole o link da loja" placeholderTextColor={colors.muted} keyboardType="url" autoCapitalize="none" autoCorrect={false} maxLength={16384}/>
+   {links.length>1&&<View style={{gap:8}}><Text style={styles.label}>Escolha o link do produto</Text>{links.map(link=><Button key={link} title={link} variant="secondary" disabled={saving} onPress={()=>{flow.select(link);setChoice(link);attempted.current=null;saveGate.current=createSaveGate();setErrors({});}}/>)}</View>}
+   {busy&&<View style={{gap:4}}><View style={styles.row}><ActivityIndicator size="small" color={colors.accent}/><Text accessibilityLiveRegion="polite" style={styles.body}>{phaseLabels[phase]}</Text></View><Text style={[styles.body,{fontSize:13}]}>Você pode preencher enquanto buscamos.</Text><TextButton title="Cancelar consulta" onPress={()=>flow.cancel()}/></View>}
+   {!!state.message&&<Text accessibilityRole="alert" style={phase==='idle'&&state.message.startsWith('Consulta cancelada')?styles.body:styles.error}>{state.message}</Text>}
+   {!!categoryError&&<View><Text style={styles.error}>{categoryError}</Text><TextButton title="Tentar carregar categorias" onPress={()=>setCategoryRetry(v=>v+1)}/></View>}
+   {draft&&<View style={{gap:12}}>
+     {!!draft.image_url&&<ProductImage uri={draft.image_url} large compact/>}
+     <ImageEditor value={draft.image_url} disabled={saving} onSaved={image_url=>flow.edit('image_url',image_url)}/>
+     <View><Text style={styles.label}>Nome do produto *</Text><TextInput accessibilityLabel="Nome do produto *" value={draft.name} editable={!saving} style={styles.input} onChangeText={name=>flow.edit('name',name)} placeholder="O que você quer guardar?" placeholderTextColor={colors.muted} maxLength={160}/>{!!errors.name&&<Text style={styles.error}>{errors.name}</Text>}</View>
+     <Text style={styles.body}>{draft.store}</Text>
+     {preview?<ImportPriceSummary prices={preview.prices}/>:<Text style={styles.body}>Preço e imagem são opcionais.</Text>}
+     <View><Text style={styles.label}>Categoria</Text><View style={styles.row}>{categories.map(category=><Chip key={category.id} title={category.name} active={draft.category_id===category.id} onPress={()=>{if(!saving)flow.edit('category_id',category.id);}}/>)}</View>{!!errors.category_id&&<Text style={styles.error}>{errors.category_id}</Text>}{categories.length===0&&!categoryError&&<Text style={styles.body}>Carregando categorias…</Text>}</View>
+     <View><Text style={styles.label}>Prioridade</Text><View style={styles.row}>{(Object.keys(priorityLabels) as Priority[]).map(priority=><Chip key={priority} title={priorityLabels[priority]} active={draft.priority===priority} onPress={()=>{if(!saving)flow.edit('priority',priority);}}/>)}</View></View>
+     <Button title={saving?'Salvando…':'Desejar'} icon={<Icon name="heart" color={colors.onPrimary} size={20}/>} disabled={saving} onPress={()=>{void desire();}}/>
+     <Button title="Editar informações" variant="secondary" icon={<Icon name="edit" size={20}/>} disabled={saving} onPress={edit}/>
+     {!!draft.description&&<Disclosure title="Descrição"><Text style={styles.body}>{draft.description}</Text></Disclosure>}
+     <Disclosure title="Condições e origem"><Text style={styles.body}>{draft.offer_details}</Text>{preview?.warnings.map(warning=><Text key={warning} style={styles.body}>{warning}</Text>)}</Disclosure>
+     {automatic&&!busy&&<TextButton title={preview?'Atualizar informações':'Buscar informações'} disabled={saving} onPress={()=>{void load();}}/>}
+     {!automatic&&<Text style={styles.body}>Consulta automática indisponível nesta loja. Complete seu desejo; o link foi preservado.</Text>}
+   </View>}
+   {!draft&&<Button title="Preencher manualmente" variant="secondary" disabled={saving} onPress={edit}/>}
+   <Disclosure title="Sobre a importação"><Text style={styles.body}>Usamos informações públicas disponíveis no link, sem contornar bloqueios. Complete apenas o que faltar. Preços e condições devem ser conferidos na loja. Nada é salvo até tocar em Desejar ou salvar o formulário.</Text></Disclosure>
+ </KeyboardScrollView>;
 }
