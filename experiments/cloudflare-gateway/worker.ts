@@ -58,6 +58,7 @@ export class AccountCoordinator {
         this.store = new DurableStore(state.storage, JSON.parse(env.SNAPSHOT) as Snapshot);
         const mock = new MockProvider({ mode: env.MOCK_MODE, delayMs: env.MOCK_MODE === 'slow' ? 100 : 1, ...(env.MOCK_PAYLOADS ? { payloads: JSON.parse(env.MOCK_PAYLOADS) } : {}) });
         const store = this.store;
+        const coordinator = this;
         let release!: () => void;
         const gate = new Promise<void>(resolve => { release = resolve; });
         this.releaseGate = release;
@@ -66,6 +67,7 @@ export class AccountCoordinator {
             async search(engine, query, signal) {
                 // SQL transaction alone is insufficient: flush the reservation before the simulated side effect.
                 await store.barrier();
+                coordinator.beforeProviderCall();
                 if (signal.aborted)
                     throw new GatewayError('CANCELLED');
                 const pending = store.q("SELECT r.id FROM c_reservation r LEFT JOIN c_calls c ON c.id=r.id WHERE r.state='pending' AND c.id IS NULL ORDER BY r.at,r.id LIMIT 1")[0];
@@ -96,6 +98,8 @@ export class AccountCoordinator {
             if (!constant(request.headers.get('x-internal') ?? '', this.env.INTERNAL_TOKEN))
                 throw new GatewayError('UNAUTHORIZED');
             const path = new URL(request.url).pathname;
+            if ((path === '/__egress-probe' || path === '/__test') && this.env.TEST_CONTROLS !== 'yes')
+                throw new GatewayError('INVALID_REQUEST');
             if (path === '/__egress-probe') {
                 const blocked = await fetch('https://outbound-denied.invalid');
                 return response({ status: blocked.status });
@@ -154,6 +158,7 @@ export class AccountCoordinator {
             return failure(e);
         }
     }
+    beforeProviderCall(): void { }
     requestLimit(): number { return 256; }
     control(input: unknown): Response {
         if (!input || typeof input !== 'object' || !('action' in input))

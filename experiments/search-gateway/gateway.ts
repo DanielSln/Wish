@@ -41,6 +41,8 @@ export class SearchGateway {
             throw new GatewayError('UNAVAILABLE');
         this.clock = options.clock ?? Date.now;
     }
+    /** Personal coordinator waits for reservation cleanup before closing its fence. */
+    async drain():Promise<void>{await Promise.allSettled([...this.flights.values()].map(job=>job.promise));}
     cancel(owner: string, id: string): boolean {
         const req = this.requests.get(`${owner}:${id}`);
         if (!req)

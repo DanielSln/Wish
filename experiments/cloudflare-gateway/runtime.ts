@@ -38,4 +38,5 @@ export interface Environment {
     MOCK_PAYLOADS?: string;
     MOCK_DETAILS_FAILURE?: string;
     MOCK_WAIT_GATE?: string;
+    TEST_CONTROLS?: string;
 }

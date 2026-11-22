@@ -9,6 +9,7 @@ export interface PersonalEnvironment extends Environment {
     RECOVERY_HASH: string;
     AUTH_SESSION_MS?: string;
     RESTORE_DECLARED?: string;
+    WITNESS_TIMEOUT_MS?: string;
 }
 export const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 export function equal(a: string, b: string) { return /^[a-f0-9]{64}$/u.test(a) && /^[a-f0-9]{64}$/u.test(b) && timingSafeEqual(new TextEncoder().encode(a), new TextEncoder().encode(b)); }
@@ -72,21 +73,53 @@ export class PersonalAuth {
         const sequence = Number(this.meta('sequence'));
         if (!Number.isSafeInteger(sequence) || sequence < 0)
             throw new GatewayError('UNAVAILABLE');
-        let res: Response;
-        try {
-            res = await this.env.WITNESS.fetch(new Request('http://local-witness/advance', { method: 'POST', body: JSON.stringify({ lineage: this.env.LINEAGE, expected: sequence }) }));
-        }
-        catch {
+        const wait = Number(this.env.WITNESS_TIMEOUT_MS ?? 2000);
+        if (!Number.isSafeInteger(wait) || wait < 1 || wait > 2000 || sequence >= Number.MAX_SAFE_INTEGER - 1)
             throw new GatewayError('UNAVAILABLE');
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+        let answer: unknown;
+        try {
+            answer = await Promise.race([(async () => {
+                    const res = await this.env.WITNESS.fetch(new Request('http://local-witness/advance', { method: 'POST', signal: controller.signal, body: JSON.stringify({ lineage: this.env.LINEAGE, expected: sequence }) }));
+                    if (res.status !== 200)
+                        throw new GatewayError('BUDGET_INCONSISTENT');
+                    reader = res.body?.getReader();
+                    if (!reader)
+                        throw new GatewayError('UNAVAILABLE');
+                    let text = '';
+                    let bytes = 0;
+                    const decoder = new TextDecoder('utf-8', { fatal: true });
+                    for (;;) {
+                        const chunk = await reader.read();
+                        if (chunk.done)
+                            break;
+                        bytes += chunk.value.length;
+                        if (bytes > 1024)
+                            throw new GatewayError('UNAVAILABLE');
+                        text += decoder.decode(chunk.value, { stream: true });
+                    }
+                    text += decoder.decode();
+                    return JSON.parse(text) as unknown;
+                })(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new GatewayError('UNAVAILABLE')), wait); })]);
         }
-        if (res.status !== 200)
+        catch (e) {
+            throw e instanceof GatewayError ? e : new GatewayError('UNAVAILABLE');
+        }
+        finally {
+            clearTimeout(timer);
+            controller.abort();
+            void reader?.cancel().catch(() => { });
+        }
+        if (!answer || typeof answer !== 'object' || Object.keys(answer).length !== 1 || !('sequence' in answer) || answer.sequence !== sequence + 1)
             throw new GatewayError('BUDGET_INCONSISTENT');
-        const answer = await res.json() as {
-            sequence?: number;
-        };
-        if (answer.sequence !== sequence + 1)
-            throw new GatewayError('BUDGET_INCONSISTENT');
-        this.store.storage.transactionSync(() => { this.store.q("UPDATE a_meta SET v=? WHERE k='sequence'", String(answer.sequence)); this.store.q("UPDATE a_meta SET v=? WHERE k='inflight'", phase === 'begin' ? '1' : '0'); });
+        this.store.storage.transactionSync(() => {
+            this.store.q("UPDATE a_meta SET v=? WHERE k='sequence'", String((answer as {
+                sequence: number;
+            }).sequence));
+            this.store.q("UPDATE a_meta SET v=? WHERE k='inflight'", phase === 'begin' ? '1' : '0');
+        });
         await this.store.barrier();
     }
     async verify(jwk: string, sig: unknown, payload: string) {
@@ -193,9 +226,8 @@ export class PersonalAuth {
         this.store.q('INSERT INTO a_nonce VALUES(?,?,?,?,?)', hash(nonce), s.id, x.path, bodyHash, Date.now() + 60000);
         return { nonce, expiresInSeconds: 60 };
     }
-    async proof(request: Request, input: unknown, path: string) {
+    async inspectProof(request: Request, input: unknown, path: string) {
         const s = this.session(request);
-        this.store.rate('proof:' + String(s.device), Date.now(), 20);
         const nonce = request.headers.get('x-wish-nonce') ?? '', bodyHash = hash(JSON.stringify(input));
         if (!HEX.test(nonce))
             throw new GatewayError('UNAUTHORIZED');
@@ -203,7 +235,16 @@ export class PersonalAuth {
         if (!n || n.session !== s.id || n.path !== path || n.body_hash !== bodyHash || Number(n.expires) <= Date.now())
             throw new GatewayError('UNAUTHORIZED');
         await this.verify(String(s.jwk), request.headers.get('x-wish-signature'), message(String(s.id), nonce, path, bodyHash));
-        this.store.q('DELETE FROM a_nonce WHERE hash=?', hash(nonce));
+        this.session(request);
+        if (!this.store.q('SELECT 1 FROM a_nonce WHERE hash=?', hash(nonce)).length)
+            throw new GatewayError('UNAUTHORIZED');
+        return s;
+    }
+    async proof(request: Request, input: unknown, path: string) {
+        const current = this.session(request);
+        this.store.rate('proof:' + String(current.device), Date.now(), 20);
+        const s = await this.inspectProof(request, input, path);
+        this.store.q('DELETE FROM a_nonce WHERE hash=?', hash(request.headers.get('x-wish-nonce')!));
         return s;
     }
     approve(input: unknown) {

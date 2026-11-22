@@ -21,7 +21,7 @@ export async function runtime(options = {}) {
         script: await readFile(new URL(options.personal ? './.local/personal.mjs' : './.local/worker.mjs', import.meta.url), 'utf8'),
         durableObjects: { COORDINATOR: { className: options.personal ? 'PersonalCoordinator' : 'AccountCoordinator', useSQLite: true } }, durableObjectsPersist: persist,
         serviceBindings: options.serviceBindings,
-        bindings: { ...options.bindings, LOCAL_TEST_ONLY: 'yes', INTERNAL_TOKEN: internal, SESSIONS: JSON.stringify(sessions), SNAPSHOT: JSON.stringify(snapshot), MOCK_MODE: options.mode ?? 'fast', ...(options.gate ? { MOCK_WAIT_GATE: 'yes' } : {}), ...(options.payloads ? { MOCK_PAYLOADS: JSON.stringify(options.payloads) } : {}), ...(options.detailsFailure ? { MOCK_DETAILS_FAILURE: 'yes' } : {}) },
+        bindings: { ...options.bindings, ...(options.testControls === 'omit' ? {} : { TEST_CONTROLS: options.testControls === false ? 'no' : 'yes' }), LOCAL_TEST_ONLY: 'yes', INTERNAL_TOKEN: internal, SESSIONS: JSON.stringify(sessions), SNAPSHOT: JSON.stringify(snapshot), MOCK_MODE: options.mode ?? 'fast', ...(options.gate ? { MOCK_WAIT_GATE: 'yes' } : {}), ...(options.payloads ? { MOCK_PAYLOADS: JSON.stringify(options.payloads) } : {}), ...(options.detailsFailure ? { MOCK_DETAILS_FAILURE: 'yes' } : {}) },
         outboundService: () => { outbound++; return new Response('OUTBOUND_DISABLED', { status: 403 }); },
     });
     try {
