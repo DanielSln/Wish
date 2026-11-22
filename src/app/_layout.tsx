@@ -1,3 +1,5 @@
+import {useMaintenance} from '@/backup/use-maintenance';
+import {MaintenanceLayer} from '@/backup/maintenance-layer';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SQLiteProvider } from 'expo-sqlite';
@@ -20,12 +22,14 @@ function Navigation() {
   const base = mode === 'dark' ? DarkTheme : DefaultTheme;
   return <ThemeProvider value={{...base,colors:{...base.colors,background:colors.bg,card:colors.card,text:colors.text,border:colors.border,primary:colors.primary}}}><StatusBar style={mode === 'dark' ? 'light' : 'dark'} /><Stack screenOptions={{ headerStyle:{backgroundColor:colors.bg},headerTintColor:colors.text,contentStyle:{backgroundColor:colors.bg},headerShadowVisible:false,headerBackTitle:'Voltar' }}>
     <Stack.Screen name="(tabs)" options={{headerShown:false}} />
+    <Stack.Screen name="backup" options={{title:'Backup e recuperação'}} />
     <Stack.Screen name="products/import" options={{title:'Adicionar por link'}} />
     <Stack.Screen name="products/new" options={{title:'Novo desejo'}} />
     <Stack.Screen name="products/[id]" options={{title:''}} />
     <Stack.Screen name="products/edit" options={{title:'Editar desejo'}} />
   </Stack></ThemeProvider>;
 }
+function CatalogShell(){const {state}=useMaintenance();return <AppearanceProvider key={state.revision}><View style={{flex:1}}><Navigation/><MaintenanceLayer/></View></AppearanceProvider>;}
 export default function RootLayout() {
-  return <DatabaseBoundary><SQLiteProvider databaseName="wish.db" onInit={initializeDatabase}><AppearanceProvider><Navigation /></AppearanceProvider></SQLiteProvider></DatabaseBoundary>;
+  return <DatabaseBoundary><SQLiteProvider databaseName="wish.db" onInit={initializeDatabase}><CatalogShell/></SQLiteProvider></DatabaseBoundary>;
 }

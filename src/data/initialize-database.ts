@@ -1,3 +1,5 @@
+import {backupPlatform} from '@/backup/platform';
+import {recoverInterrupted} from '@/backup/recovery';
 import { backupDatabaseAsync, openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { randomUUID } from 'expo-crypto';
 import { migrate } from './migrations';
@@ -9,6 +11,7 @@ const driver: SnapshotDriver = {
 };
 export async function initializeDatabase(db: SQLiteDatabase) {
   await migrate(db, () => copyVerifiedDatabase(db,driver,'wish-pre-v5-'+randomUUID()+'.db'));
+  await recoverInterrupted(db,backupPlatform.files);
 }
 // Maintenance only: creates a separate recovery DB, never swaps wish.db automatically.
 // Requires owner's restoration decision and closed catalogue connections.

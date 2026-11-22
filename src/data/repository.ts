@@ -1,3 +1,4 @@
+import {guardRepository} from './catalog-gate.ts';
 import { validateOffer, type Offer, type OfferInput } from '../domain/offers.ts';
 import type { Database } from './migrations.ts';
 import { isLocalImage, remoteImageUrl } from '../domain/image-management.ts';
@@ -6,7 +7,7 @@ import type { Category, Filters, Product, ProductInput, PurchaseStatus } from '.
 
 const fields = ['name','description','category_id','priority','image_url','price_cents','desired_price_cents','store','original_url','notes','personal_notes','offer_details','status'] as const;
 export function createRepository(db: Database, uuid: () => string, now = () => new Date().toISOString()) {
-  return {
+  return guardRepository(db, {
     offers: (productId: string) => db.getAllAsync<Offer>('SELECT o.* FROM product_offers o JOIN products p ON p.id=o.product_id WHERE o.product_id=? AND o.deleted_at IS NULL AND p.deleted_at IS NULL ORDER BY o.price_cents, o.recorded_at DESC, o.id',productId),
     async saveOffer(productId: string, input: OfferInput, id?: string) {
       validateOffer(input);
@@ -98,5 +99,5 @@ export function createRepository(db: Database, uuid: () => string, now = () => n
     setStatus: (id: string, status: PurchaseStatus) => db.runAsync('UPDATE products SET status=?,updated_at=? WHERE id=? AND deleted_at IS NULL', status, now(), id),
     // Tombstones preserve deletions for a future sync adapter. No sync or user data leaves the device.
     remove: (id: string) => { const date = now(); return db.runAsync('UPDATE products SET deleted_at=?,updated_at=? WHERE id=? AND deleted_at IS NULL', date, date, id); },
-  };
+  });
 }
