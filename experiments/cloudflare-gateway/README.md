@@ -68,3 +68,16 @@ node --require ./experiments/search-gateway/offline-loopback.cjs --test experime
 `personal-harness.mjs` representa os papéis de dispositivo e operador apenas no laboratório; não é código para embarcar no app. Capacidades são geradas em memória e não devem ser impressas ou serializadas. Witnesses e checkpoints ficam sob `.local/` em árvores separadas. Retomada requer o contexto original e witness íntegra; não há reset automático de credenciais/orçamento. Restauração declarada fica bloqueada.
 
 [Modelo de ameaças, procedimentos e limitações da Fase 7.4](../../docs/PHASE-7-4-GATEWAY-AUTH-RECOVERY.md). **Sem autorização de deployment, API real ou integração ao Wish.**
+
+## Fase 7.5 — revisão de exposição: NO-GO
+
+Controles autenticados podem interromper restritivamente o job em memória; revogação e consumo de nonce continuam persistidos sob um escritor e fences. Cancelamento depende de nonce pré-emitido. A limpeza da reserva é aguardada antes de fechar o fence, e a autorização é conferida novamente antes da entrega final.
+
+Fixtures exigem `TEST_CONTROLS=yes`, definido explicitamente pelo harness de testes. Ausente/desativado, controles de teste são recusados; isso **não torna o laboratório publicável**. `operator-fixtures.ts`, diagnósticos/release e perfis/operadores simulados precisam ser removidos/substituídos em entrada produtiva separada.
+
+```powershell
+node --require ./experiments/search-gateway/offline-loopback.cjs --test experiments/cloudflare-gateway/readiness.test.mjs
+node experiments/cloudflare-gateway/exposure-audit.mjs
+```
+
+O audit retorna **1 com NO_GO** (ou 2 se o inventário estiver obsoleto), nunca aprovação automática. [Relatório 7.5, riscos, quotas oficiais e critérios de aceite](../../docs/PHASE-7-5-REMOTE-READINESS.md). Pesquisa real permanece desabilitada; nenhuma autorização de implantação ou integração está implícita nos testes.
